@@ -1,3 +1,4 @@
+//src/auth/dto/register.dto.ts
 import {
   IsEmail,
   IsOptional,
@@ -13,14 +14,21 @@ export class RegisterDto {
   username: string;
 
   @IsEmail()
+  @MaxLength(150)
   email: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @MaxLength(100)
   password: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
-  display_name?: string;
+  @MaxLength(80)
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  lastName?: string;
 }

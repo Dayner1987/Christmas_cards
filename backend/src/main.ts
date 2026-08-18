@@ -10,7 +10,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const frontendUrl =
-    configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+    configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
 
   app.useGlobalPipes(
     new ValidationPipe({

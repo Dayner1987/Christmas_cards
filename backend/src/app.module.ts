@@ -1,13 +1,19 @@
 import { Module } from '@nestjs/common';
+
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+
+import {
+  ConfigModule,
+  ConfigService,
+} from '@nestjs/config';
+
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { typeOrmConfig } from './config/typeorm.config';
 
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-
+import { GroupsModule } from './groups/groups.module';
 
 @Module({
   imports: [
@@ -18,13 +24,23 @@ import { AuthModule } from './auth/auth.module';
     ScheduleModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => typeOrmConfig(configService),
+      imports: [
+        ConfigModule,
+      ],
+
+      inject: [
+        ConfigService,
+      ],
+
+      useFactory: (
+        configService: ConfigService,
+      ) =>
+        typeOrmConfig(configService),
     }),
 
     AuthModule,
     UsersModule,
+    GroupsModule,
   ],
 })
 export class AppModule {}

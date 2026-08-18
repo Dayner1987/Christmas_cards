@@ -1,4 +1,4 @@
-export interface User {
+export interface AuthUser {
   id: string;
 
   username: string;
@@ -26,40 +26,30 @@ export interface User {
   updatedAt: string;
 }
 
-export interface CreateUser {
+export interface LoginCredentials {
+  identifier: string;
+  password: string;
+}
+
+export interface RegisterData {
   username: string;
   email: string;
   password: string;
 
   firstName?: string;
   lastName?: string;
-
-  phone?: string;
-
-  avatarUrl?: string;
-  biography?: string;
-
-  birthDate?: string;
-
-  timezone?: string;
-  languageCode?: string;
 }
 
-export interface UpdateUser {
-  username?: string;
-  email?: string;
-  password?: string;
+export interface AuthResponse {
+  accessToken: string;
+  user: AuthUser;
+}
 
-  firstName?: string;
-  lastName?: string;
+export interface AuthTokenPayload {
+  sub: string;
+  email: string;
+  username: string;
 
-  phone?: string;
-
-  avatarUrl?: string;
-  biography?: string;
-
-  birthDate?: string;
-
-  timezone?: string;
-  languageCode?: string;
+  iat?: number;
+  exp?: number;
 }

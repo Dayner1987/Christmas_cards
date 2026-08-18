@@ -1,76 +1,76 @@
 import {
-  IsDateString,
   IsEmail,
-  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUrl,
-  Length,
+  MinLength,
+  MaxLength,
+  IsDateString,
+  IsIn,
 } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
-  @Length(3, 50)
+  @MaxLength(50)
   username: string;
 
   @IsEmail()
   @IsNotEmpty()
-  @Length(1, 150)
+  @MaxLength(150)
   email: string;
 
   @IsString()
   @IsNotEmpty()
-  @Length(8, 255)
+  @MinLength(8)
+  @MaxLength(100)
   password: string;
 
-  @IsString()
   @IsOptional()
-  @Length(1, 80)
-  first_name?: string;
+  @IsString()
+  @MaxLength(80)
+  firstName?: string;
 
-  @IsString()
   @IsOptional()
-  @Length(1, 80)
-  last_name?: string;
+  @IsString()
+  @MaxLength(80)
+  lastName?: string;
 
-  @IsString()
   @IsOptional()
-  @Length(1, 30)
+  @IsString()
+  @MaxLength(30)
   phone?: string;
 
-  @IsUrl()
   @IsOptional()
-  @Length(1, 500)
-  avatar_url?: string;
-
   @IsString()
+  @MaxLength(500)
+  avatarUrl?: string;
+
   @IsOptional()
-  @Length(1, 500)
+  @IsString()
+  @MaxLength(500)
   biography?: string;
 
+  @IsOptional()
   @IsDateString()
-  @IsOptional()
-  birth_date?: string;
+  birthDate?: string;
 
-  @IsString()
   @IsOptional()
-  @Length(1, 50)
+  @IsString()
+  @MaxLength(50)
   timezone?: string;
 
-  @IsString()
   @IsOptional()
-  @Length(1, 10)
-  language_code?: string;
+  @IsString()
+  @MaxLength(10)
+  languageCode?: string;
 
-  @IsString()
   @IsOptional()
-  @IsIn(['active', 'inactive', 'suspended', 'deleted'])
+  @IsIn([
+    'active',
+    'inactive',
+    'suspended',
+    'deleted',
+  ])
   status?: string;
-
-  @IsString()
-  @IsOptional()
-  @IsIn(['ADMIN', 'CLIENT'])
-  role?: string;
 }

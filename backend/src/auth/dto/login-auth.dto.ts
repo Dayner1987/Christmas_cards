@@ -1,10 +1,16 @@
-import { IsString, MinLength } from 'class-validator';
+//src/auth/dto/login-auth.dto.ts
+import {
+  IsNotEmpty,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class LoginDto {
   @IsString()
-  identifier: string; // Puede ser email o username
+  @IsNotEmpty()
+  identifier: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
   password: string;
 }

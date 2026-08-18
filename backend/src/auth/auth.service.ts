@@ -27,7 +27,16 @@ export class AuthService implements OnApplicationBootstrap {
   ) {}
 
   // =====================================================
-  // CREAR ADMINISTRADOR AUTOMÁTICAMENTE
+  // CREAR USUARIO ADMINISTRATIVO AUTOMÁTICAMENTE
+  // =====================================================
+  //
+  // IMPORTANTE:
+  // Actualmente la tabla users NO tiene columna "role".
+  // Por eso este usuario se crea como un usuario normal.
+  //
+  // Si más adelante necesitamos un administrador global
+  // de la plataforma, debemos diseñar ese permiso
+  // explícitamente.
   // =====================================================
 
   async onApplicationBootstrap() {
@@ -66,20 +75,20 @@ export class AuthService implements OnApplicationBootstrap {
 
     if (!username || !email || !password) {
       this.logger.warn(
-        'No se creó el admin porque faltan ADMIN_USERNAME, ADMIN_EMAIL o ADMIN_PASSWORD en el .env',
+        'No se creó el usuario administrativo porque faltan ADMIN_USERNAME, ADMIN_EMAIL o ADMIN_PASSWORD en el .env',
       );
 
       return;
     }
 
-    const existingAdmin =
+    const existingEmail =
       await this.usersService.findByEmailOrUsername(
         email,
       );
 
-    if (existingAdmin) {
+    if (existingEmail) {
       this.logger.log(
-        'El usuario admin ya existe, no se creó otro.',
+        'El usuario administrativo ya existe, no se creó otro.',
       );
 
       return;
@@ -92,28 +101,27 @@ export class AuthService implements OnApplicationBootstrap {
 
     if (existingUsername) {
       this.logger.warn(
-        'No se creó el admin porque el ADMIN_USERNAME ya existe.',
+        'No se creó el usuario administrativo porque el ADMIN_USERNAME ya existe.',
       );
 
       return;
     }
 
-    const password_hash =
-      await bcrypt.hash(password, 10);
+    const passwordHash =
+      await bcrypt.hash(
+        password,
+        10,
+      );
 
     await this.usersService.createFromAuth({
       username,
       email,
-      password_hash,
-
-      first_name: firstName,
-
-      role: 'ADMIN',
-      status: 'active',
+      passwordHash,
+      firstName,
     });
 
     this.logger.log(
-      'Usuario admin creado correctamente desde .env',
+      'Usuario administrativo creado correctamente desde .env',
     );
   }
 
@@ -144,7 +152,7 @@ export class AuthService implements OnApplicationBootstrap {
       );
     }
 
-    const password_hash =
+    const passwordHash =
       await bcrypt.hash(
         registerDto.password,
         10,
@@ -152,13 +160,13 @@ export class AuthService implements OnApplicationBootstrap {
 
     const user =
       await this.usersService.createFromAuth({
-        username: registerDto.username,
-        email: registerDto.email,
-        password_hash,
+        username:
+          registerDto.username,
 
-      
-        role: 'CLIENT',
-        status: 'active',
+        email:
+          registerDto.email,
+
+        passwordHash,
       });
 
     return this.buildAuthResponse(user);
@@ -170,9 +178,10 @@ export class AuthService implements OnApplicationBootstrap {
 
   async login(loginDto: LoginDto) {
     const user =
-      await this.usersService.findByEmailOrUsernameWithPassword(
-        loginDto.identifier,
-      );
+      await this.usersService
+        .findByEmailOrUsernameWithPassword(
+          loginDto.identifier,
+        );
 
     if (!user) {
       throw new UnauthorizedException(
@@ -189,7 +198,7 @@ export class AuthService implements OnApplicationBootstrap {
     const isPasswordValid =
       await bcrypt.compare(
         loginDto.password,
-        user.password_hash,
+        user.passwordHash,
       );
 
     if (!isPasswordValid) {
@@ -198,6 +207,15 @@ export class AuthService implements OnApplicationBootstrap {
       );
     }
 
+    // Actualizamos último inicio de sesión.
+    await this.usersService.updateLastLogin(
+      user.id,
+    );
+
+    // También actualizamos el objeto para que la
+    // respuesta tenga el valor reciente.
+    user.lastLoginAt = new Date();
+
     return this.buildAuthResponse(user);
   }
 
@@ -205,22 +223,25 @@ export class AuthService implements OnApplicationBootstrap {
   // CREAR RESPUESTA JWT
   // =====================================================
 
-  private async buildAuthResponse(user: User) {
+  private async buildAuthResponse(
+    user: User,
+  ) {
     const payload = {
-      sub: user.id_users,
+      sub: user.id,
       email: user.email,
       username: user.username,
-      role: user.role,
     };
 
-    const access_token =
+    const accessToken =
       await this.jwtService.signAsync(
         payload,
       );
 
     return {
-      access_token,
-      user: this.sanitizeUser(user),
+      accessToken,
+
+      user:
+        this.sanitizeUser(user),
     };
   }
 
@@ -230,10 +251,20 @@ export class AuthService implements OnApplicationBootstrap {
 
   private sanitizeUser(user: User) {
     const {
-      password_hash,
+      passwordHash,
       ...safeUser
     } = user;
 
     return safeUser;
   }
+
+  // =====================================================
+// OBTENER USUARIO AUTENTICADO
+// =====================================================
+
+async me(userId: string) {
+  return await this.usersService.findOne(
+    userId,
+  );
+}
 }
