@@ -1,34 +1,128 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { WishlistItemsService } from './wishlist_items.service';
-import { CreateWishlistItemDto } from './dto/create-wishlist_item.dto';
-import { UpdateWishlistItemDto } from './dto/update-wishlist_item.dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 
-@Controller('wishlist-items')
+import {
+  JwtAuthGuard,
+} from '../auth/jwt-auth.guard';
+
+import {
+  WishlistItemsService,
+} from './wishlist_items.service';
+
+import {
+  CreateWishlistItemDto,
+} from './dto/create-wishlist_item.dto';
+
+import {
+  UpdateWishlistItemDto,
+} from './dto/update-wishlist_item.dto';
+
+@Controller(
+  'wishlists/:wishlistId/items',
+)
+@UseGuards(JwtAuthGuard)
 export class WishlistItemsController {
-  constructor(private readonly wishlistItemsService: WishlistItemsService) {}
+  constructor(
+    private readonly wishlistItemsService:
+      WishlistItemsService,
+  ) {}
 
   @Post()
-  create(@Body() createWishlistItemDto: CreateWishlistItemDto) {
-    return this.wishlistItemsService.create(createWishlistItemDto);
+  create(
+    @Param('wishlistId')
+    wishlistId: string,
+
+    @Req()
+    request: any,
+
+    @Body()
+    dto: CreateWishlistItemDto,
+  ) {
+    return this.wishlistItemsService.create(
+      wishlistId,
+      request.user.sub,
+      dto,
+    );
   }
 
   @Get()
-  findAll() {
-    return this.wishlistItemsService.findAll();
+  findAll(
+    @Param('wishlistId')
+    wishlistId: string,
+
+    @Req()
+    request: any,
+  ) {
+    return this.wishlistItemsService.findAll(
+      wishlistId,
+      request.user.sub,
+    );
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.wishlistItemsService.findOne(+id);
+  @Get(':itemId')
+  findOne(
+    @Param('wishlistId')
+    wishlistId: string,
+
+    @Param('itemId')
+    itemId: string,
+
+    @Req()
+    request: any,
+  ) {
+    return this.wishlistItemsService.findOne(
+      wishlistId,
+      itemId,
+      request.user.sub,
+    );
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWishlistItemDto: UpdateWishlistItemDto) {
-    return this.wishlistItemsService.update(+id, updateWishlistItemDto);
+  @Patch(':itemId')
+  update(
+    @Param('wishlistId')
+    wishlistId: string,
+
+    @Param('itemId')
+    itemId: string,
+
+    @Req()
+    request: any,
+
+    @Body()
+    dto: UpdateWishlistItemDto,
+  ) {
+    return this.wishlistItemsService.update(
+      wishlistId,
+      itemId,
+      request.user.sub,
+      dto,
+    );
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.wishlistItemsService.remove(+id);
+  @Delete(':itemId')
+  remove(
+    @Param('wishlistId')
+    wishlistId: string,
+
+    @Param('itemId')
+    itemId: string,
+
+    @Req()
+    request: any,
+  ) {
+    return this.wishlistItemsService.remove(
+      wishlistId,
+      itemId,
+      request.user.sub,
+    );
   }
 }
