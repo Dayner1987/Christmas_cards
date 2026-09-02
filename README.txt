@@ -8,5 +8,6 @@ npm install -D @types/bcrypt
 npm install vite -D
 npm install tailwindcss @tailwindcss/vite
 npm install react-router-dom lucide-react
-****recomended to create backend for devs: ***
+npm install @nestjs/mapped-types
+****recomended to create backend for devs: ******
 npx nest g resource groups --no-spec
