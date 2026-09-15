@@ -2,16 +2,16 @@ import { useState } from 'react';
 
 import {
   createUser,
-  getUsers,
-  getUserById,
-  updateUser,
   deleteUser,
+  getUserById,
+  getUsers,
+  updateUser,
 } from '../api/users';
 
 import type {
-  User,
   CreateUser,
   UpdateUser,
+  User,
 } from '../types/user.schema';
 
 export const useUsers = () => {
@@ -19,42 +19,58 @@ export const useUsers = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Obtener todos
-  const fetchUsers = async () => {
+  const clearError = () => {
+    setError(null);
+  };
+
+  const fetchUsers = async (): Promise<User[]> => {
     try {
       setLoading(true);
       setError(null);
 
       const data = await getUsers();
-
       setUsers(data);
+
+      return data;
     } catch (error) {
       console.error('ERROR AL OBTENER USUARIOS:', error);
-      setError('No se pudieron obtener los usuarios');
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudieron obtener los usuarios';
+
+      setError(message);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Obtener uno
-  const fetchUserById = async (id: string) => {
+  const fetchUserById = async (
+    id: string,
+  ): Promise<User | null> => {
     try {
       setLoading(true);
       setError(null);
 
-      const user = await getUserById(id);
-
-      return user;
+      return await getUserById(id);
     } catch (error) {
-      setError('No se pudo obtener el usuario');
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo obtener el usuario';
+
+      setError(message);
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // Crear
-  const addUser = async (data: CreateUser) => {
+  const addUser = async (
+    data: CreateUser,
+  ): Promise<User | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -68,18 +84,22 @@ export const useUsers = () => {
 
       return user;
     } catch (error) {
-      setError('No se pudo crear el usuario');
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo crear el usuario';
+
+      setError(message);
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar
   const editUser = async (
     id: string,
     data: UpdateUser,
-  ) => {
+  ): Promise<User | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -88,23 +108,27 @@ export const useUsers = () => {
 
       setUsers((currentUsers) =>
         currentUsers.map((user) =>
-          user.id_users === id
-            ? updatedUser
-            : user,
+          user.id === id ? updatedUser : user,
         ),
       );
 
       return updatedUser;
     } catch (error) {
-      setError('No se pudo actualizar el usuario');
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo actualizar el usuario';
+
+      setError(message);
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // Eliminar
-  const removeUser = async (id: string) => {
+  const removeUser = async (
+    id: string,
+  ): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
@@ -112,14 +136,17 @@ export const useUsers = () => {
       await deleteUser(id);
 
       setUsers((currentUsers) =>
-        currentUsers.filter(
-          (user) => user.id_users !== id,
-        ),
+        currentUsers.filter((user) => user.id !== id),
       );
 
       return true;
     } catch (error) {
-      setError('No se pudo eliminar el usuario');
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo eliminar el usuario';
+
+      setError(message);
       return false;
     } finally {
       setLoading(false);
@@ -130,7 +157,7 @@ export const useUsers = () => {
     users,
     loading,
     error,
-
+    clearError,
     fetchUsers,
     fetchUserById,
     addUser,
