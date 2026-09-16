@@ -1,101 +1,55 @@
-import {
-  useEffect,
-  useState,
-} from 'react';
-
-import type {
-  FormEvent,
-} from 'react';
-import {
-  Link,
-  useNavigate,
-} from 'react-router-dom';
-
-import {
-  Eye,
-  EyeOff,
-  Gift,
-  LockKeyhole,
-  Mail,
-  Sparkles,
+import type { FormEvent } from 'react';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { 
+  Gift, 
+  Sparkles, 
+  Mail, 
+  LockKeyhole, 
+  Eye, 
+  EyeOff 
 } from 'lucide-react';
 
 import { useAuth } from '../hooks/auth.hooks';
-import { authStorage } from '../config/auth.storage';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-
   const {
     loginUser,
     loading,
     error,
   } = useAuth();
 
-  const [
-    identifier,
-    setIdentifier,
-  ] = useState('');
-
-  const [
-    password,
-    setPassword,
-  ] = useState('');
-
-  const [
-    showPassword,
-    setShowPassword,
-  ] = useState(false);
-
-  // =====================================================
-  // SI YA EXISTE SESIÓN, NO MOSTRAMOS LOGIN
-  // =====================================================
-
-  useEffect(() => {
-    if (authStorage.isAuthenticated()) {
-      navigate('/home', {
-        replace: true,
-      });
-    }
-  }, [navigate]);
-
-  // =====================================================
-  // LOGIN
-  // =====================================================
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
-    if (!identifier.trim() || !password) {
-      return;
-    }
-
     try {
-      await loginUser({
+      const response = await loginUser({
         identifier: identifier.trim(),
         password,
       });
 
-      // Por ahora todos los usuarios normales
-      // ingresan a ClientHome.
-      navigate('/home', {
-        replace: true,
-      });
+      if (response.user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/home', { replace: true });
+      }
     } catch {
-      // El error ya es gestionado por useAuth().
+      // El mensaje ya se guarda en el hook.
     }
   };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-900 px-4 py-10">
       {/* Decoraciones */}
-
       <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-purple-400/20 blur-3xl" />
-
       <div className="pointer-events-none absolute -bottom-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-fuchsia-400/20 blur-3xl" />
-
       <div className="pointer-events-none absolute left-1/2 top-1/4 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-300/10 blur-3xl" />
 
       <section className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center justify-center">
@@ -104,7 +58,6 @@ export default function LoginPage() {
           {/* ================================================= */}
           {/* PANEL IZQUIERDO */}
           {/* ================================================= */}
-
           <div className="relative hidden min-h-[650px] flex-col justify-between overflow-hidden bg-white/10 p-12 lg:flex">
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
 
@@ -131,7 +84,6 @@ export default function LoginPage() {
             <div className="relative z-10 rounded-3xl border border-white/10 bg-black/10 p-6 backdrop-blur">
               <div className="flex items-center gap-3">
                 <Sparkles className="text-yellow-300" />
-
                 <p className="font-semibold text-white">
                   ChristmasCards
                 </p>
@@ -147,17 +99,14 @@ export default function LoginPage() {
           {/* ================================================= */}
           {/* FORMULARIO */}
           {/* ================================================= */}
-
           <div className="bg-white px-6 py-10 sm:px-12 lg:px-14 lg:py-14">
             <div className="mx-auto max-w-md">
 
               {/* Logo móvil */}
-
               <div className="mb-8 flex items-center gap-3 lg:hidden">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-600 text-white">
                   <Gift size={23} />
                 </div>
-
                 <span className="text-xl font-black text-purple-950">
                   ChristmasCards
                 </span>
@@ -183,7 +132,6 @@ export default function LoginPage() {
                 className="mt-9 space-y-5"
               >
                 {/* Usuario / email */}
-
                 <div>
                   <label
                     htmlFor="identifier"
@@ -216,7 +164,6 @@ export default function LoginPage() {
                 </div>
 
                 {/* Password */}
-
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <label
@@ -276,7 +223,6 @@ export default function LoginPage() {
                 </div>
 
                 {/* Error */}
-
                 {error && (
                   <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
                     {error}
@@ -284,7 +230,6 @@ export default function LoginPage() {
                 )}
 
                 {/* Submit */}
-
                 <button
                   type="submit"
                   disabled={loading}

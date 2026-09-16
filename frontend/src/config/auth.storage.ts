@@ -7,11 +7,7 @@ const TOKEN_KEY = 'christmas_cards_token';
 const USER_KEY = 'christmas_cards_user';
 
 export const authStorage = {
-  // =====================================================
-  // GUARDAR SESIÓN
-  // =====================================================
-
-  saveSession(authResponse: AuthResponse) {
+  saveSession(authResponse: AuthResponse): void {
     localStorage.setItem(
       TOKEN_KEY,
       authResponse.accessToken,
@@ -23,21 +19,19 @@ export const authStorage = {
     );
   },
 
-  // =====================================================
-  // OBTENER TOKEN
-  // =====================================================
+  updateUser(user: AuthUser): void {
+    localStorage.setItem(
+      USER_KEY,
+      JSON.stringify(user),
+    );
+  },
 
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
   },
 
-  // =====================================================
-  // OBTENER USUARIO
-  // =====================================================
-
   getUser(): AuthUser | null {
-    const user =
-      localStorage.getItem(USER_KEY);
+    const user = localStorage.getItem(USER_KEY);
 
     if (!user) {
       return null;
@@ -50,19 +44,11 @@ export const authStorage = {
     }
   },
 
-  // =====================================================
-  // VERIFICAR SI EXISTE SESIÓN
-  // =====================================================
-
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return Boolean(this.getToken());
   },
 
-  // =====================================================
-  // ELIMINAR SESIÓN
-  // =====================================================
-
-  clearSession() {
+  clearSession(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   },

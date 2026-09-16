@@ -3,13 +3,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 
-import * as bcrypt from 'bcrypt';
+import {
+  User,
+  UserRole,
+} from './entities/user.entity';
 
-import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -20,15 +22,8 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  // =====================================================
-  // CREAR USUARIO
-  // =====================================================
-
   async create(createUserDto: CreateUserDto) {
-    const {
-      password,
-      ...userData
-    } = createUserDto;
+    const { password, ...userData } = createUserDto;
 
     await this.validateUniqueFields(
       userData.email,
@@ -36,14 +31,13 @@ export class UsersService {
       userData.phone,
     );
 
-    const passwordHash = await bcrypt.hash(
-      password,
-      10,
-    );
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = this.usersRepository.create({
       ...userData,
       passwordHash,
+      role: UserRole.CLIENT,
+      status: 'active',
     });
 
     const savedUser =
@@ -52,32 +46,17 @@ export class UsersService {
     return this.toPublicUser(savedUser);
   }
 
-  // =====================================================
-  // LISTAR USUARIOS
-  // =====================================================
-
-  async findAll() {
-    return await this.usersRepository.find({
-      where: {
-        status: 'active',
-      },
-      order: {
-        createdAt: 'DESC',
-      },
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find({
+      where: { status: 'active' },
+      order: { createdAt: 'DESC' },
     });
   }
 
-  // =====================================================
-  // BUSCAR USUARIO POR UUID
-  // =====================================================
-
-  async findOne(id: string) {
-    const user =
-      await this.usersRepository.findOne({
-        where: {
-          id,
-        },
-      });
+  async findOne(id: string): Promise<User> {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+    });
 
     if (!user || user.status === 'deleted') {
       throw new NotFoundException(
@@ -88,39 +67,30 @@ export class UsersService {
     return user;
   }
 
-  // =====================================================
-  // BUSCAR POR EMAIL O USERNAME
-  // =====================================================
-
-  async findByEmailOrUsername(value: string) {
-    return await this.usersRepository
+  async findByEmailOrUsername(
+    value: string,
+  ): Promise<User | null> {
+    return this.usersRepository
       .createQueryBuilder('user')
-      .where(
-        'LOWER(user.email) = LOWER(:value)',
-        { value },
-      )
+      .where('LOWER(user.email) = LOWER(:value)', {
+        value,
+      })
       .orWhere(
         'LOWER(user.username) = LOWER(:value)',
         { value },
       )
       .getOne();
   }
-
-  // =====================================================
-  // BUSCAR POR EMAIL O USERNAME + PASSWORD HASH
-  // SE UTILIZA PRINCIPALMENTE DESDE AUTH
-  // =====================================================
 
   async findByEmailOrUsernameWithPassword(
     value: string,
-  ) {
-    return await this.usersRepository
+  ): Promise<User | null> {
+    return this.usersRepository
       .createQueryBuilder('user')
       .addSelect('user.passwordHash')
-      .where(
-        'LOWER(user.email) = LOWER(:value)',
-        { value },
-      )
+      .where('LOWER(user.email) = LOWER(:value)', {
+        value,
+      })
       .orWhere(
         'LOWER(user.username) = LOWER(:value)',
         { value },
@@ -128,26 +98,21 @@ export class UsersService {
       .getOne();
   }
 
-  // =====================================================
-  // BUSCAR POR EMAIL
-  // =====================================================
-
-  async findByEmail(email: string) {
-    return await this.usersRepository
+  async findByEmail(
+    email: string,
+  ): Promise<User | null> {
+    return this.usersRepository
       .createQueryBuilder('user')
-      .where(
-        'LOWER(user.email) = LOWER(:email)',
-        { email },
-      )
+      .where('LOWER(user.email) = LOWER(:email)', {
+        email,
+      })
       .getOne();
   }
 
-  // =====================================================
-  // BUSCAR POR USERNAME
-  // =====================================================
-
-  async findByUsername(username: string) {
-    return await this.usersRepository
+  async findByUsername(
+    username: string,
+  ): Promise<User | null> {
+    return this.usersRepository
       .createQueryBuilder('user')
       .where(
         'LOWER(user.username) = LOWER(:username)',
@@ -156,30 +121,65 @@ export class UsersService {
       .getOne();
   }
 
-  // =====================================================
-  // CREAR USUARIO DESDE AUTH
-  // =====================================================
-
- async createFromAuth(data: {
-  username: string;
-  email: string;
-  passwordHash: string;
-
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-}): Promise<User> {
-  const user =
-    this.usersRepository.create({
+  async createFromAuth(data: {
+    username: string;
+    email: string;
+    passwordHash: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  }): Promise<User> {
+    const user = this.usersRepository.create({
       ...data,
+      role: UserRole.CLIENT,
       status: 'active',
     });
 
-  return await this.usersRepository.save(user);
-}
-  // =====================================================
-  // ACTUALIZAR USUARIO
-  // =====================================================
+    return this.usersRepository.save(user);
+  }
+
+  async ensureAdminUser(data: {
+    username: string;
+    email: string;
+    password: string;
+    firstName?: string;
+  }): Promise<User> {
+    let admin = await this.findByEmail(data.email);
+
+    if (admin) {
+      admin.role = UserRole.ADMIN;
+      admin.status = 'active';
+
+      return this.usersRepository.save(admin);
+    }
+
+    const usernameExists = await this.findByUsername(
+      data.username,
+    );
+
+    if (usernameExists) {
+      usernameExists.role = UserRole.ADMIN;
+      usernameExists.status = 'active';
+
+      return this.usersRepository.save(usernameExists);
+    }
+
+    const passwordHash = await bcrypt.hash(
+      data.password,
+      10,
+    );
+
+    admin = this.usersRepository.create({
+      username: data.username,
+      email: data.email,
+      passwordHash,
+      firstName: data.firstName ?? null,
+      role: UserRole.ADMIN,
+      status: 'active',
+    });
+
+    return this.usersRepository.save(admin);
+  }
 
   async update(
     id: string,
@@ -191,10 +191,9 @@ export class UsersService {
       updateUserDto.email &&
       updateUserDto.email !== user.email
     ) {
-      const existingEmail =
-        await this.findByEmail(
-          updateUserDto.email,
-        );
+      const existingEmail = await this.findByEmail(
+        updateUserDto.email,
+      );
 
       if (
         existingEmail &&
@@ -231,9 +230,7 @@ export class UsersService {
     ) {
       const existingPhone =
         await this.usersRepository.findOne({
-          where: {
-            phone: updateUserDto.phone,
-          },
+          where: { phone: updateUserDto.phone },
         });
 
       if (
@@ -246,22 +243,15 @@ export class UsersService {
       }
     }
 
-    const {
-      password,
-      ...updateData
-    } = updateUserDto;
+    const { password, ...updateData } = updateUserDto;
 
-    Object.assign(
-      user,
-      updateData,
-    );
+    Object.assign(user, updateData);
 
     if (password) {
-      user.passwordHash =
-        await bcrypt.hash(
-          password,
-          10,
-        );
+      user.passwordHash = await bcrypt.hash(
+        password,
+        10,
+      );
     }
 
     const updatedUser =
@@ -270,61 +260,36 @@ export class UsersService {
     return this.toPublicUser(updatedUser);
   }
 
-  // =====================================================
-  // ELIMINAR USUARIO
-  // BORRADO LÓGICO
-  // =====================================================
-
   async remove(id: string) {
     const user = await this.findOne(id);
 
     user.status = 'deleted';
-
     await this.usersRepository.save(user);
 
     return {
-      message:
-        'Usuario eliminado correctamente',
+      message: 'Usuario eliminado correctamente',
     };
   }
 
-  // =====================================================
-  // ACTUALIZAR ÚLTIMO LOGIN
-  // =====================================================
-
-  async updateLastLogin(id: string) {
+  async updateLastLogin(id: string): Promise<void> {
     await this.usersRepository.update(
-      {
-        id,
-      },
-      {
-        lastLoginAt: new Date(),
-      },
+      { id },
+      { lastLoginAt: new Date() },
     );
   }
-
-  // =====================================================
-  // VALIDAR DATOS ÚNICOS
-  // =====================================================
 
   private async validateUniqueFields(
     email: string,
     username: string,
     phone?: string,
-  ) {
-    const existingEmail =
-      await this.findByEmail(email);
-
-    if (existingEmail) {
+  ): Promise<void> {
+    if (await this.findByEmail(email)) {
       throw new ConflictException(
         'El correo electrónico ya está registrado',
       );
     }
 
-    const existingUsername =
-      await this.findByUsername(username);
-
-    if (existingUsername) {
+    if (await this.findByUsername(username)) {
       throw new ConflictException(
         'El nombre de usuario ya está registrado',
       );
@@ -333,9 +298,7 @@ export class UsersService {
     if (phone) {
       const existingPhone =
         await this.usersRepository.findOne({
-          where: {
-            phone,
-          },
+          where: { phone },
         });
 
       if (existingPhone) {
@@ -346,16 +309,8 @@ export class UsersService {
     }
   }
 
-  // =====================================================
-  // ELIMINAR INFORMACIÓN PRIVADA DE LA RESPUESTA
-  // =====================================================
-
-  private toPublicUser(user: User) {
-    const {
-      passwordHash,
-      ...publicUser
-    } = user;
-
+  public toPublicUser(user: User) {
+    const { passwordHash, ...publicUser } = user;
     return publicUser;
   }
 }

@@ -1,24 +1,26 @@
 import {
-  Injectable,
   ConflictException,
-  UnauthorizedException,
-  OnApplicationBootstrap,
+  Injectable,
   Logger,
+  OnApplicationBootstrap,
+  UnauthorizedException,
 } from '@nestjs/common';
-
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-
 import * as bcrypt from 'bcrypt';
 
 import { UsersService } from '../users/users.service';
+import { User } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login-auth.dto';
-import { User } from '../users/entities/user.entity';
 
 @Injectable()
-export class AuthService implements OnApplicationBootstrap {
-  private readonly logger = new Logger(AuthService.name);
+export class AuthService
+  implements OnApplicationBootstrap
+{
+  private readonly logger = new Logger(
+    AuthService.name,
+  );
 
   constructor(
     private readonly usersService: UsersService,
@@ -26,30 +28,17 @@ export class AuthService implements OnApplicationBootstrap {
     private readonly configService: ConfigService,
   ) {}
 
-  // =====================================================
-  // CREAR USUARIO ADMINISTRATIVO AUTOMÁTICAMENTE
-  // =====================================================
-  //
-  // IMPORTANTE:
-  // Actualmente la tabla users NO tiene columna "role".
-  // Por eso este usuario se crea como un usuario normal.
-  //
-  // Si más adelante necesitamos un administrador global
-  // de la plataforma, debemos diseñar ese permiso
-  // explícitamente.
-  // =====================================================
-
-  async onApplicationBootstrap() {
+  async onApplicationBootstrap(): Promise<void> {
     await this.createAdminFromEnv();
   }
 
-  private async createAdminFromEnv() {
+  private async createAdminFromEnv(): Promise<void> {
     const autoCreate =
       this.configService.get<string>(
         'ADMIN_AUTO_CREATE',
-      );
+      ) === 'true';
 
-    if (autoCreate !== 'true') {
+    if (!autoCreate) {
       return;
     }
 
@@ -59,9 +48,7 @@ export class AuthService implements OnApplicationBootstrap {
       );
 
     const email =
-      this.configService.get<string>(
-        'ADMIN_EMAIL',
-      );
+      this.configService.get<string>('ADMIN_EMAIL');
 
     const password =
       this.configService.get<string>(
@@ -71,67 +58,32 @@ export class AuthService implements OnApplicationBootstrap {
     const firstName =
       this.configService.get<string>(
         'ADMIN_FIRST_NAME',
-      ) || 'Administrador';
+      ) ?? 'Administrador';
 
     if (!username || !email || !password) {
       this.logger.warn(
-        'No se creó el usuario administrativo porque faltan ADMIN_USERNAME, ADMIN_EMAIL o ADMIN_PASSWORD en el .env',
+        'Faltan datos del administrador en el archivo .env',
       );
 
       return;
     }
 
-    const existingEmail =
-      await this.usersService.findByEmailOrUsername(
-        email,
-      );
-
-    if (existingEmail) {
-      this.logger.log(
-        'El usuario administrativo ya existe, no se creó otro.',
-      );
-
-      return;
-    }
-
-    const existingUsername =
-      await this.usersService.findByEmailOrUsername(
+    const admin =
+      await this.usersService.ensureAdminUser({
         username,
-      );
-
-    if (existingUsername) {
-      this.logger.warn(
-        'No se creó el usuario administrativo porque el ADMIN_USERNAME ya existe.',
-      );
-
-      return;
-    }
-
-    const passwordHash =
-      await bcrypt.hash(
+        email,
         password,
-        10,
-      );
-
-    await this.usersService.createFromAuth({
-      username,
-      email,
-      passwordHash,
-      firstName,
-    });
+        firstName,
+      });
 
     this.logger.log(
-      'Usuario administrativo creado correctamente desde .env',
+      `Administrador listo: ${admin.email} - rol: ${admin.role}`,
     );
   }
 
-  // =====================================================
-  // REGISTER
-  // =====================================================
-
   async register(registerDto: RegisterDto) {
     const usernameExists =
-      await this.usersService.findByEmailOrUsername(
+      await this.usersService.findByUsername(
         registerDto.username,
       );
 
@@ -142,7 +94,7 @@ export class AuthService implements OnApplicationBootstrap {
     }
 
     const emailExists =
-      await this.usersService.findByEmailOrUsername(
+      await this.usersService.findByEmail(
         registerDto.email,
       );
 
@@ -152,29 +104,23 @@ export class AuthService implements OnApplicationBootstrap {
       );
     }
 
-    const passwordHash =
-      await bcrypt.hash(
-        registerDto.password,
-        10,
-      );
+    const passwordHash = await bcrypt.hash(
+      registerDto.password,
+      10,
+    );
 
     const user =
       await this.usersService.createFromAuth({
-        username:
-          registerDto.username,
-
-        email:
-          registerDto.email,
-
+        username: registerDto.username,
+        email: registerDto.email,
         passwordHash,
+        firstName: registerDto.firstName,
+        lastName: registerDto.lastName,
+        
       });
 
     return this.buildAuthResponse(user);
   }
-
-  // =====================================================
-  // LOGIN
-  // =====================================================
 
   async login(loginDto: LoginDto) {
     const user =
@@ -195,11 +141,10 @@ export class AuthService implements OnApplicationBootstrap {
       );
     }
 
-    const isPasswordValid =
-      await bcrypt.compare(
-        loginDto.password,
-        user.passwordHash,
-      );
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.passwordHash,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException(
@@ -207,64 +152,32 @@ export class AuthService implements OnApplicationBootstrap {
       );
     }
 
-    // Actualizamos último inicio de sesión.
-    await this.usersService.updateLastLogin(
-      user.id,
-    );
-
-    // También actualizamos el objeto para que la
-    // respuesta tenga el valor reciente.
+    await this.usersService.updateLastLogin(user.id);
     user.lastLoginAt = new Date();
 
     return this.buildAuthResponse(user);
   }
 
-  // =====================================================
-  // CREAR RESPUESTA JWT
-  // =====================================================
-
-  private async buildAuthResponse(
-    user: User,
-  ) {
+  private async buildAuthResponse(user: User) {
     const payload = {
       sub: user.id,
       email: user.email,
       username: user.username,
+      role: user.role,
     };
 
     const accessToken =
-      await this.jwtService.signAsync(
-        payload,
-      );
+      await this.jwtService.signAsync(payload);
 
     return {
       accessToken,
-
-      user:
-        this.sanitizeUser(user),
+      user: this.usersService.toPublicUser(user),
     };
   }
 
-  // =====================================================
-  // QUITAR PASSWORD DE LA RESPUESTA
-  // =====================================================
+  async me(userId: string) {
+    const user = await this.usersService.findOne(userId);
 
-  private sanitizeUser(user: User) {
-    const {
-      passwordHash,
-      ...safeUser
-    } = user;
-
-    return safeUser;
+    return this.usersService.toPublicUser(user);
   }
-
-  // =====================================================
-// OBTENER USUARIO AUTENTICADO
-// =====================================================
-
-async me(userId: string) {
-  return await this.usersService.findOne(
-    userId,
-  );
-}
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   Navigate,
   Route,
@@ -6,27 +7,48 @@ import {
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-
 import ClientHome from './pages/client/ClientHome';
 import HomeAdmin from './pages/admin/AdminHome';
-
 import { authStorage } from './config/auth.storage';
 
 function ProtectedRoute({
   children,
+  allowedRole,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
+  allowedRole?: 'admin' | 'client';
 }) {
-  if (!authStorage.isAuthenticated()) {
+  const user = authStorage.getUser();
+
+  if (!authStorage.isAuthenticated() || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRole && user.role !== allowedRole) {
     return (
       <Navigate
-        to="/login"
+        to={user.role === 'admin' ? '/admin' : '/home'}
         replace
       />
     );
   }
 
-  return children;
+  return <>{children}</>;
+}
+
+function PublicRoute({ children }: { children: ReactNode }) {
+  const user = authStorage.getUser();
+
+  if (authStorage.isAuthenticated() && user) {
+    return (
+      <Navigate
+        to={user.role === 'admin' ? '/admin' : '/home'}
+        replace
+      />
+    );
+  }
+
+  return <>{children}</>;
 }
 
 export default function App() {
@@ -34,28 +56,31 @@ export default function App() {
     <Routes>
       <Route
         path="/"
-        element={
-          <Navigate
-            to="/login"
-            replace
-          />
-        }
+        element={<Navigate to="/login" replace />}
       />
 
       <Route
         path="/login"
-        element={<LoginPage />}
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
       />
 
       <Route
         path="/register"
-        element={<RegisterPage />}
+        element={
+          <PublicRoute>
+            <RegisterPage />
+          </PublicRoute>
+        }
       />
 
       <Route
         path="/home"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRole="client">
             <ClientHome />
           </ProtectedRoute>
         }
@@ -64,7 +89,7 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRole="admin">
             <HomeAdmin />
           </ProtectedRoute>
         }
@@ -72,12 +97,7 @@ export default function App() {
 
       <Route
         path="*"
-        element={
-          <Navigate
-            to="/login"
-            replace
-          />
-        }
+        element={<Navigate to="/login" replace />}
       />
     </Routes>
   );

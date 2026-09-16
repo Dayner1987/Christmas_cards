@@ -1,27 +1,23 @@
+export type UserRole =
+  | 'admin'
+  | 'client';
+
 export interface AuthUser {
   id: string;
-
   username: string;
   email: string;
-
   firstName: string | null;
   lastName: string | null;
-
   phone: string | null;
-
   avatarUrl: string | null;
   biography: string | null;
-
   birthDate: string | null;
-
   timezone: string;
   languageCode: string;
-
   status: string;
-
+  role: UserRole;
   emailVerifiedAt: string | null;
   lastLoginAt: string | null;
-
   createdAt: string;
   updatedAt: string;
 }

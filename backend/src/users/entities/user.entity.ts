@@ -6,6 +6,11 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum UserRole {
+  ADMIN = 'admin',
+  CLIENT = 'client',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid', {
@@ -20,6 +25,14 @@ export class User {
     unique: true,
   })
   username: string;
+
+ @Column({
+    name: 'role',
+    type: 'varchar',
+    length: 20,
+    default: UserRole.CLIENT,
+  })
+  role: UserRole;
 
   @Column({
     name: 'email',
@@ -134,4 +147,6 @@ export class User {
     type: 'timestamptz',
   })
   updatedAt: Date;
+
+  
 }
