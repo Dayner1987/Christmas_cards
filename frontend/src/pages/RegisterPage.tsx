@@ -1,17 +1,6 @@
-import {
-  useEffect,
-  useState,
-} from 'react';
-
-import type {
-  FormEvent,
-} from 'react';
-
-import {
-  Link,
-  useNavigate,
-} from 'react-router-dom';
-
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Eye,
   EyeOff,
@@ -21,6 +10,7 @@ import {
   Sparkles,
   User,
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 import { useAuth } from '../hooks/auth.hooks';
 import { authStorage } from '../config/auth.storage';
@@ -28,53 +18,17 @@ import { authStorage } from '../config/auth.storage';
 export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const {
-    registerUser,
-    loading,
-    error,
-  } = useAuth();
+  const { registerUser, loading, error } = useAuth();
 
-  const [
-    username,
-    setUsername,
-  ] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [
-    email,
-    setEmail,
-  ] = useState('');
-
-  const [
-    firstName,
-    setFirstName,
-  ] = useState('');
-
-  const [
-    lastName,
-    setLastName,
-  ] = useState('');
-
-  const [
-    password,
-    setPassword,
-  ] = useState('');
-
-  const [
-    confirmPassword,
-    setConfirmPassword,
-  ] = useState('');
-
-  const [
-    showPassword,
-    setShowPassword,
-  ] = useState(false);
-
-  const [
-    localError,
-    setLocalError,
-  ] = useState<string | null>(
-    null,
-  );
+  const [localError, setLocalError] = useState<string | null>(null);
 
   // =====================================================
   // SI YA EXISTE SESIÓN
@@ -92,26 +46,70 @@ export default function RegisterPage() {
   // REGISTER
   // =====================================================
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     setLocalError(null);
 
-    if (password !== confirmPassword) {
-      setLocalError(
-        'Las contraseñas no coinciden',
-      );
+    // Validaciones manuales para evitar los mensajes nativos del navegador en inglés
+    if (!username.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo vacío',
+        text: 'Por favor, ingresa un nombre de usuario.',
+        confirmButtonColor: '#9333ea',
+      });
+      return;
+    }
 
+    if (!email.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo vacío',
+        text: 'Por favor, ingresa tu correo electrónico.',
+        confirmButtonColor: '#9333ea',
+      });
+      return;
+    }
+
+    if (!password) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo vacío',
+        text: 'Por favor, ingresa una contraseña.',
+        confirmButtonColor: '#9333ea',
+      });
       return;
     }
 
     if (password.length < 8) {
-      setLocalError(
-        'La contraseña debe tener al menos 8 caracteres',
-      );
+      Swal.fire({
+        icon: 'warning',
+        title: 'Contraseña muy corta',
+        text: 'La contraseña debe tener al menos 8 caracteres.',
+        confirmButtonColor: '#9333ea',
+      });
+      setLocalError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
 
+    if (!confirmPassword) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo vacío',
+        text: 'Por favor, confirma tu contraseña.',
+        confirmButtonColor: '#9333ea',
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Contraseñas no coinciden',
+        text: 'Las contraseñas ingresadas no coinciden.',
+        confirmButtonColor: '#9333ea',
+      });
+      setLocalError('Las contraseñas no coinciden');
       return;
     }
 
@@ -119,31 +117,41 @@ export default function RegisterPage() {
       await registerUser({
         username: username.trim(),
         email: email.trim(),
-
         password,
+        firstName: firstName.trim() || undefined,
+        lastName: lastName.trim() || undefined,
+      });
 
-        firstName:
-          firstName.trim() || undefined,
-
-        lastName:
-          lastName.trim() || undefined,
+      // Alerta de éxito antes de redirigir
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Cuenta creada!',
+        text: 'Te damos la bienvenida a ChristmasCards.',
+        timer: 1500,
+        showConfirmButton: false,
+        background: '#ffffff',
+        iconColor: '#10b981',
       });
 
       navigate('/home', {
         replace: true,
       });
-    } catch {
-      // useAuth gestiona el error.
+    } catch (err: any) {
+      // Alerta de error proveniente del backend/hook
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: error || err?.message || 'Hubo un error al registrar la cuenta.',
+        confirmButtonColor: '#9333ea',
+      });
     }
   };
 
-  const displayedError =
-    localError || error;
+  const displayedError = localError || error;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-900 px-4 py-8">
       <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-purple-400/20 blur-3xl" />
-
       <div className="pointer-events-none absolute -bottom-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-fuchsia-400/20 blur-3xl" />
 
       <section className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center justify-center">
@@ -152,7 +160,6 @@ export default function RegisterPage() {
           {/* ================================================= */}
           {/* IZQUIERDA */}
           {/* ================================================= */}
-
           <div className="relative hidden min-h-[720px] flex-col justify-between overflow-hidden bg-white/10 p-12 lg:flex">
             <div className="relative z-10">
               <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-purple-700 shadow-xl">
@@ -177,7 +184,6 @@ export default function RegisterPage() {
             <div className="relative z-10 rounded-3xl border border-white/10 bg-black/10 p-6">
               <div className="flex items-center gap-3">
                 <Sparkles className="text-yellow-300" />
-
                 <span className="font-bold text-white">
                   Tu Navidad, organizada
                 </span>
@@ -193,7 +199,6 @@ export default function RegisterPage() {
           {/* ================================================= */}
           {/* FORM */}
           {/* ================================================= */}
-
           <div className="bg-white px-6 py-9 sm:px-12 lg:px-14">
             <div className="mx-auto max-w-md">
 
@@ -201,7 +206,6 @@ export default function RegisterPage() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-600 text-white">
                   <Gift size={23} />
                 </div>
-
                 <span className="text-xl font-black text-purple-950">
                   ChristmasCards
                 </span>
@@ -222,9 +226,9 @@ export default function RegisterPage() {
               <form
                 onSubmit={handleSubmit}
                 className="mt-7 space-y-4"
+                noValidate // Desactiva las validaciones nativas de HTML5
               >
                 {/* Username */}
-
                 <Field
                   label="Nombre de usuario"
                   icon={<User size={18} />}
@@ -232,13 +236,9 @@ export default function RegisterPage() {
                   <input
                     value={username}
                     onChange={(e) =>
-                      setUsername(
-                        e.target.value,
-                      )
+                      setUsername(e.target.value)
                     }
-                    minLength={3}
                     maxLength={50}
-                    required
                     placeholder="juampi"
                     autoComplete="username"
                     className={inputClass}
@@ -246,7 +246,6 @@ export default function RegisterPage() {
                 </Field>
 
                 {/* Email */}
-
                 <Field
                   label="Correo electrónico"
                   icon={<Mail size={18} />}
@@ -255,11 +254,8 @@ export default function RegisterPage() {
                     type="email"
                     value={email}
                     onChange={(e) =>
-                      setEmail(
-                        e.target.value,
-                      )
+                      setEmail(e.target.value)
                     }
-                    required
                     placeholder="correo@gmail.com"
                     autoComplete="email"
                     className={inputClass}
@@ -267,7 +263,6 @@ export default function RegisterPage() {
                 </Field>
 
                 {/* Nombre + apellido */}
-
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field
                     label="Nombre"
@@ -276,9 +271,7 @@ export default function RegisterPage() {
                     <input
                       value={firstName}
                       onChange={(e) =>
-                        setFirstName(
-                          e.target.value,
-                        )
+                        setFirstName(e.target.value)
                       }
                       maxLength={80}
                       placeholder="Juan"
@@ -293,9 +286,7 @@ export default function RegisterPage() {
                     <input
                       value={lastName}
                       onChange={(e) =>
-                        setLastName(
-                          e.target.value,
-                        )
+                        setLastName(e.target.value)
                       }
                       maxLength={80}
                       placeholder="Pérez"
@@ -305,29 +296,16 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Password */}
-
                 <Field
                   label="Contraseña"
-                  icon={
-                    <LockKeyhole
-                      size={18}
-                    />
-                  }
+                  icon={<LockKeyhole size={18} />}
                 >
                   <input
-                    type={
-                      showPassword
-                        ? 'text'
-                        : 'password'
-                    }
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) =>
-                      setPassword(
-                        e.target.value,
-                      )
+                      setPassword(e.target.value)
                     }
-                    required
-                    minLength={8}
                     placeholder="Mínimo 8 caracteres"
                     autoComplete="new-password"
                     className={`${inputClass} pr-12`}
@@ -336,37 +314,22 @@ export default function RegisterPage() {
                   <PasswordButton
                     show={showPassword}
                     onClick={() =>
-                      setShowPassword(
-                        (current) =>
-                          !current,
-                      )
+                      setShowPassword((current) => !current)
                     }
                   />
                 </Field>
 
                 {/* Confirmación */}
-
                 <Field
                   label="Confirmar contraseña"
-                  icon={
-                    <LockKeyhole
-                      size={18}
-                    />
-                  }
+                  icon={<LockKeyhole size={18} />}
                 >
                   <input
-                    type={
-                      showPassword
-                        ? 'text'
-                        : 'password'
-                    }
+                    type={showPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) =>
-                      setConfirmPassword(
-                        e.target.value,
-                      )
+                      setConfirmPassword(e.target.value)
                     }
-                    required
                     placeholder="Repite tu contraseña"
                     autoComplete="new-password"
                     className={inputClass}

@@ -33,7 +33,6 @@ export interface CreateUser {
   firstName?: string;
   lastName?: string;
   phone?: string;
-  avatarUrl?: string;
   biography?: string;
   birthDate?: string;
   timezone?: string;
@@ -44,12 +43,15 @@ export interface UpdateUser {
   username?: string;
   email?: string;
   password?: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  avatarUrl?: string;
-  biography?: string;
-  birthDate?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  biography?: string | null;
+  birthDate?: string | null;
   timezone?: string;
   languageCode?: string;
+}
+
+export interface ChangePassword {
+  password: string;
 }

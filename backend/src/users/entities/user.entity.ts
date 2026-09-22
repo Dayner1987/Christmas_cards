@@ -26,7 +26,7 @@ export class User {
   })
   username: string;
 
- @Column({
+  @Column({
     name: 'role',
     type: 'varchar',
     length: 20,
@@ -82,6 +82,14 @@ export class User {
     nullable: true,
   })
   avatarUrl: string | null;
+
+  @Column({
+    name: 'avatar_public_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  avatarPublicId: string | null;
 
   @Column({
     name: 'biography',
@@ -147,6 +155,4 @@ export class User {
     type: 'timestamptz',
   })
   updatedAt: Date;
-
-  
 }

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
@@ -11,16 +10,37 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { typeOrmConfig } from './config/typeorm.config';
 
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { GroupsModule } from './groups/groups.module';
-import { GroupMembersModule } from './group_members/group_members.module';
-import { WishlistsModule } from './wishlists/wishlists.module';
-import { WishlistItemsModule } from './wishlist_items/wishlist_items.module';
+
+import {
+  GroupMembersModule,
+} from './group_members/group_members.module';
+
+import {
+  WishlistsModule,
+} from './wishlists/wishlists.module';
+
+import {
+  WishlistItemsModule,
+} from './wishlist_items/wishlist_items.module';
+
 import { CardsModule } from './cards/cards.module';
-import { UserCardsModule } from './user_cards/user_cards.module';
-import { SecretSantaEventsModule } from './secret_santa_events/secret_santa_events.module';
-import { SecretSantaAssignmentsModule } from './secret_santa_assignments/secret_santa_assignments.module';
+
+import {
+  UserCardsModule,
+} from './user_cards/user_cards.module';
+
+import {
+  SecretSantaEventsModule,
+} from './secret_santa_events/secret_santa_events.module';
+
+import {
+  SecretSantaAssignmentsModule,
+} from './secret_santa_assignments/secret_santa_assignments.module';
 
 @Module({
   imports: [
@@ -31,19 +51,14 @@ import { SecretSantaAssignmentsModule } from './secret_santa_assignments/secret_
     ScheduleModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
-      imports: [
-        ConfigModule,
-      ],
+      imports: [ConfigModule],
+      inject: [ConfigService],
 
-      inject: [
-        ConfigService,
-      ],
-
-      useFactory: (
-        configService: ConfigService,
-      ) =>
+      useFactory: (configService: ConfigService) =>
         typeOrmConfig(configService),
     }),
+
+    CloudinaryModule,
 
     AuthModule,
     UsersModule,

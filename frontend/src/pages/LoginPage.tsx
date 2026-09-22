@@ -9,6 +9,7 @@ import {
   Eye, 
   EyeOff 
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 import { useAuth } from '../hooks/auth.hooks';
 
@@ -29,10 +30,42 @@ export default function LoginPage() {
   ) => {
     event.preventDefault();
 
+    // Validación manual para evitar los mensajes nativos del navegador
+    if (!identifier.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo vacío',
+        text: 'Por favor, ingresa tu correo o nombre de usuario.',
+        confirmButtonColor: '#9333ea',
+      });
+      return;
+    }
+
+    if (!password) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo vacío',
+        text: 'Por favor, ingresa tu contraseña.',
+        confirmButtonColor: '#9333ea',
+      });
+      return;
+    }
+
     try {
       const response = await loginUser({
         identifier: identifier.trim(),
         password,
+      });
+
+      // Alerta de éxito en verde antes de redirigir
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Login correcto!',
+        text: 'Bienvenido de nuevo.',
+        timer: 1500,
+        showConfirmButton: false,
+        background: '#ffffff',
+        iconColor: '#10b981', // Color verde esmeralda
       });
 
       if (response.user.role === 'admin') {
@@ -40,8 +73,14 @@ export default function LoginPage() {
       } else {
         navigate('/home', { replace: true });
       }
-    } catch {
-      // El mensaje ya se guarda en el hook.
+    } catch (err: any) {
+      // Alerta de error personalizada con SweetAlert2
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: error || err?.message || 'Correo, usuario o contraseña incorrectos.',
+        confirmButtonColor: '#9333ea', // Color morado acorde a tu diseño
+      });
     }
   };
 
@@ -130,6 +169,7 @@ export default function LoginPage() {
               <form
                 onSubmit={handleSubmit}
                 className="mt-9 space-y-5"
+                noValidate
               >
                 {/* Usuario / email */}
                 <div>
@@ -157,7 +197,6 @@ export default function LoginPage() {
                       }
                       placeholder="juampi o juampi@gmail.com"
                       autoComplete="username"
-                      required
                       className="h-13 w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-100"
                     />
                   </div>
@@ -195,16 +234,13 @@ export default function LoginPage() {
                       }
                       placeholder="••••••••"
                       autoComplete="current-password"
-                      required
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-100"
                     />
 
                     <button
                       type="button"
                       onClick={() =>
-                        setShowPassword(
-                          (current) => !current,
-                        )
+                        setShowPassword((current) => !current)
                       }
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-purple-600"
                       aria-label={
@@ -221,13 +257,6 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
-
-                {/* Error */}
-                {error && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-                    {error}
-                  </div>
-                )}
 
                 {/* Submit */}
                 <button

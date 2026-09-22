@@ -7,7 +7,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-
+//hay que corregir porque repite el dashboard admin
 const data = [
   { month: 'Nov', users: 35 },
   { month: 'Dic', users: 52 },

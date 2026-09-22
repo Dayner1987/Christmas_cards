@@ -2,10 +2,7 @@ export type GroupVisibility =
   | 'private'
   | 'public';
 
-export type GroupJoinMode =
-  | 'invite_only'
-  | 'invitation_link'
-  | 'open';
+export type GroupJoinMode = 'link' | 'approval' | 'closed';
 
 export type GroupStatus =
   | 'active'
