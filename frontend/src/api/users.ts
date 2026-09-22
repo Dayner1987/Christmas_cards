@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { authStorage } from '../config/auth.storage';
+
 import type {
   CreateUser,
   UpdateUser,
@@ -14,32 +16,35 @@ const api = axios.create({
   },
 });
 
-// Crear usuario
+api.interceptors.request.use((config) => {
+  const token = authStorage.getToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 export const createUser = async (
   data: CreateUser,
 ): Promise<User> => {
   const response = await api.post<User>('/users', data);
-
   return response.data;
 };
 
-// Obtener todos los usuarios
 export const getUsers = async (): Promise<User[]> => {
   const response = await api.get<User[]>('/users');
-
   return response.data;
 };
 
-// Obtener un usuario por ID
 export const getUserById = async (
   id: string,
 ): Promise<User> => {
   const response = await api.get<User>(`/users/${id}`);
-
   return response.data;
 };
 
-// Actualizar usuario
 export const updateUser = async (
   id: string,
   data: UpdateUser,
@@ -52,7 +57,6 @@ export const updateUser = async (
   return response.data;
 };
 
-// Eliminar usuario
 export const deleteUser = async (
   id: string,
 ): Promise<void> => {

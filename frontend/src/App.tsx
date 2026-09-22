@@ -1,29 +1,16 @@
-import {
-  Navigate,
-  Route,
-  Routes,
-} from 'react-router-dom';
+import { Navigate, Route, Routes } from "react-router-dom";
 
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
-import ClientHome from './pages/client/ClientHome';
-import HomeAdmin from './pages/admin/AdminHome';
+import ClientHome from "./pages/client/ClientHome";
+import HomeAdmin from "./pages/admin/AdminHome";
+import CardCatalogPage from "./pages/components/cards/CardCatalogPage";
+import { authStorage } from "./config/auth.storage";
 
-import { authStorage } from './config/auth.storage';
-
-function ProtectedRoute({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!authStorage.isAuthenticated()) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -32,25 +19,11 @@ function ProtectedRoute({
 export default function App() {
   return (
     <Routes>
-      <Route
-        path="/"
-        element={
-          <Navigate
-            to="/login"
-            replace
-          />
-        }
-      />
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
-      <Route
-        path="/login"
-        element={<LoginPage />}
-      />
+      <Route path="/login" element={<LoginPage />} />
 
-      <Route
-        path="/register"
-        element={<RegisterPage />}
-      />
+      <Route path="/register" element={<RegisterPage />} />
 
       <Route
         path="/home"
@@ -70,13 +43,13 @@ export default function App() {
         }
       />
 
+      <Route path="*" element={<Navigate to="/login" replace />} />
       <Route
-        path="*"
+        path="/cards"
         element={
-          <Navigate
-            to="/login"
-            replace
-          />
+          <ProtectedRoute>
+            <CardCatalogPage />
+          </ProtectedRoute>
         }
       />
     </Routes>

@@ -62,7 +62,7 @@ export default function ClientHome() {
             <UserRound size={26} />
 
             <span className="text-sm font-semibold text-purple-100">
-              Tu cuenta
+              Tu cuenta sensual
             </span>
           </div>
 

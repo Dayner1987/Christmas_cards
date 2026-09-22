@@ -24,11 +24,21 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 
 import { UsersService } from '../users/users.service';
 
+import {
+  GroupMember,
+  GroupMemberRole,
+  JoinedBy,
+  MembershipStatus,
+} from '../group_members/entities/group_member.entity';
+
 @Injectable()
 export class GroupsService {
   constructor(
     @InjectRepository(Group)
     private readonly groupsRepository: Repository<Group>,
+
+    @InjectRepository(GroupMember)
+    private readonly groupMembersRepository: Repository<GroupMember>,
 
     private readonly usersService: UsersService,
 
@@ -49,39 +59,49 @@ export class GroupsService {
       ...groupData
     } = createGroupDto;
 
-    // Verificar que el usuario autenticado exista.
+    // Verificar que el usuario autenticado exista
     await this.usersService.findOne(ownerId);
 
-    // Generar código único de invitación.
-    const invitationCode =
-      randomUUID().replace(/-/g, '');
+    // Generar código único de invitación
+    const invitationCode = randomUUID().replace(/-/g, '');
 
     const frontendUrl =
-      this.configService.get<string>(
-        'FRONTEND_URL',
-      ) || 'http://localhost:3001';
+      this.configService.get<string>('FRONTEND_URL') ||
+      'http://localhost:3001';
 
     const invitationUrl =
       `${frontendUrl}/groups/join/${invitationCode}`;
 
-    const group =
-      this.groupsRepository.create({
-        ...groupData,
+    const group = this.groupsRepository.create({
+      ...groupData,
+      ownerId,
+      invitationCode,
+      invitationUrl,
+      invitationExpiresAt: invitationExpiresAt
+        ? new Date(invitationExpiresAt)
+        : null,
+    });
 
-        ownerId,
+    // Primero se guarda el grupo para obtener su UUID
+    const savedGroup = await this.groupsRepository.save(group);
 
-        invitationCode,
-        invitationUrl,
-
-        invitationExpiresAt:
-          invitationExpiresAt
-            ? new Date(invitationExpiresAt)
-            : null,
+    // Registrar al creador como propietario del grupo
+    const ownerMembership =
+      this.groupMembersRepository.create({
+        groupId: savedGroup.id,
+        userId: ownerId,
+        role: GroupMemberRole.OWNER,
+        membershipStatus: MembershipStatus.ACTIVE,
+        joinedBy: JoinedBy.OWNER,
+        joinedAt: new Date(),
       });
 
-    return await this.groupsRepository.save(
-      group,
+    await this.groupMembersRepository.save(
+      ownerMembership,
     );
+
+    // Se mantiene la respuesta original: devuelve el grupo creado
+    return savedGroup;
   }
 
   // =====================================================
@@ -94,7 +114,6 @@ export class GroupsService {
       where: {
         status: Not(GroupStatus.DELETED),
       },
-
       order: {
         createdAt: 'DESC',
       },
@@ -106,12 +125,11 @@ export class GroupsService {
   // =====================================================
 
   async findOne(id: string) {
-    const group =
-      await this.groupsRepository.findOne({
-        where: {
-          id,
-        },
-      });
+    const group = await this.groupsRepository.findOne({
+      where: {
+        id,
+      },
+    });
 
     if (
       !group ||
@@ -127,7 +145,6 @@ export class GroupsService {
 
   // =====================================================
   // LISTAR GRUPOS CREADOS POR UN USUARIO
-  // El ownerId normalmente vendrá del JWT.
   // =====================================================
 
   async findByOwner(ownerId: string) {
@@ -136,7 +153,6 @@ export class GroupsService {
         ownerId,
         status: Not(GroupStatus.DELETED),
       },
-
       order: {
         createdAt: 'DESC',
       },
@@ -150,13 +166,12 @@ export class GroupsService {
   async findByInvitationCode(
     invitationCode: string,
   ) {
-    const group =
-      await this.groupsRepository.findOne({
-        where: {
-          invitationCode,
-          status: GroupStatus.ACTIVE,
-        },
-      });
+    const group = await this.groupsRepository.findOne({
+      where: {
+        invitationCode,
+        status: GroupStatus.ACTIVE,
+      },
+    });
 
     if (!group) {
       throw new NotFoundException(
@@ -164,16 +179,12 @@ export class GroupsService {
       );
     }
 
-    // Si la invitación fue deshabilitada,
-    // no permitimos utilizarla.
     if (!group.invitationEnabled) {
       throw new NotFoundException(
         'La invitación ya no está disponible',
       );
     }
 
-    // Si tiene fecha de expiración,
-    // comprobamos que siga vigente.
     if (
       group.invitationExpiresAt &&
       group.invitationExpiresAt < new Date()
@@ -196,132 +207,95 @@ export class GroupsService {
     userId: string,
     updateGroupDto: UpdateGroupDto,
   ) {
-    const group =
-      await this.findOne(id);
+    const group = await this.findOne(id);
 
-    this.validateOwner(
-      group,
-      userId,
-    );
+    this.validateOwner(group, userId);
 
     const {
       invitationExpiresAt,
       ...updateData
     } = updateGroupDto;
 
-    Object.assign(
-      group,
-      updateData,
-    );
+    Object.assign(group, updateData);
 
-    if (
-      invitationExpiresAt !== undefined
-    ) {
+    if (invitationExpiresAt !== undefined) {
       group.invitationExpiresAt =
-        new Date(invitationExpiresAt);
+        invitationExpiresAt
+          ? new Date(invitationExpiresAt)
+          : null;
     }
 
-    return await this.groupsRepository.save(
-      group,
-    );
+    return await this.groupsRepository.save(group);
   }
 
   // =====================================================
   // ARCHIVAR GRUPO
-  // Solo el propietario puede archivarlo.
   // =====================================================
 
   async archive(
     id: string,
     userId: string,
   ) {
-    const group =
-      await this.findOne(id);
+    const group = await this.findOne(id);
 
-    this.validateOwner(
-      group,
-      userId,
-    );
+    this.validateOwner(group, userId);
 
-    group.status =
-      GroupStatus.ARCHIVED;
-
+    group.status = GroupStatus.ARCHIVED;
     group.invitationEnabled = false;
 
-    return await this.groupsRepository.save(
-      group,
-    );
+    return await this.groupsRepository.save(group);
   }
 
   // =====================================================
   // ELIMINAR GRUPO
-  // BORRADO LÓGICO
-  // Solo el propietario puede eliminarlo.
+  // Borrado lógico.
   // =====================================================
 
   async remove(
     id: string,
     userId: string,
   ) {
-    const group =
-      await this.findOne(id);
+    const group = await this.findOne(id);
 
-    this.validateOwner(
-      group,
-      userId,
-    );
+    this.validateOwner(group, userId);
 
-    group.status =
-      GroupStatus.DELETED;
-
+    group.status = GroupStatus.DELETED;
     group.invitationEnabled = false;
 
-    await this.groupsRepository.save(
-      group,
-    );
+    await this.groupsRepository.save(group);
 
     return {
-      message:
-        'Grupo eliminado correctamente',
+      message: 'Grupo eliminado correctamente',
     };
   }
 
   // =====================================================
   // REGENERAR INVITACIÓN
-  // Solo el propietario puede hacerlo.
   // =====================================================
 
   async regenerateInvitation(
     id: string,
     userId: string,
   ) {
-    const group =
-      await this.findOne(id);
+    const group = await this.findOne(id);
 
-    this.validateOwner(
-      group,
-      userId,
-    );
+    this.validateOwner(group, userId);
 
     const invitationCode =
       randomUUID().replace(/-/g, '');
 
     const frontendUrl =
-      this.configService.get<string>(
-        'FRONTEND_URL',
-      ) || 'http://localhost:3001';
+      this.configService.get<string>('FRONTEND_URL') ||
+      'http://localhost:3001';
 
-    group.invitationCode =
-      invitationCode;
+    group.invitationCode = invitationCode;
 
     group.invitationUrl =
       `${frontendUrl}/groups/join/${invitationCode}`;
 
     group.invitationEnabled = true;
 
-    return await this.groupsRepository.save(
-      group,
-    );
+    return await this.groupsRepository.save(group);
   }
 
   // =====================================================
