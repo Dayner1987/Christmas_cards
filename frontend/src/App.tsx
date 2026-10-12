@@ -10,6 +10,9 @@ import ClientHome from './pages/client/ClientHome';
 import HomeAdmin from './pages/admin/AdminHome';
 import AdminUsers from './pages/admin/AdminUsers';
 import GroupsAdmin from './pages/admin/GroupsAdmin';
+import CardsAdmin from './pages/admin/CardsAdmin';
+import WishlistsAdmin from './pages/admin/WishlistsAdmin';
+import SecretSantaAdmin from './pages/admin/SecretSantaAdmin';
 
 import EditUser from './components/admin/users/editUser';
 
@@ -153,7 +156,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/admin/cards"
+        element={
+          <ProtectedRoute allowedRole="admin">
+            <CardsAdmin />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/admin/groups"
         element={
@@ -162,6 +172,22 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+            <Route
+        path="/admin/wishlists"
+        element={
+          <ProtectedRoute allowedRole="admin">
+            <WishlistsAdmin />
+          </ProtectedRoute>
+        }
+      />
+    <Route
+      path="/admin/secret-santa"
+      element={
+        <ProtectedRoute allowedRole="admin">
+          <SecretSantaAdmin />
+        </ProtectedRoute>
+      }
+    />
 
       <Route
         path="/admin/perfil/editar"
