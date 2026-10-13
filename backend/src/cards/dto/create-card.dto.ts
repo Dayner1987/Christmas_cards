@@ -21,30 +21,6 @@ export class CreateCardDto {
   @MaxLength(500)
   description?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @IsUrl({
-    require_protocol: true,
-  })
-  @MaxLength(1000)
-  frontImageUrl: string;
-
-  @IsOptional()
-  @IsString()
-  @IsUrl({
-    require_protocol: true,
-  })
-  @MaxLength(1000)
-  backgroundImageUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  @IsUrl({
-    require_protocol: true,
-  })
-  @MaxLength(1000)
-  previewImageUrl?: string;
-
   @IsOptional()
   @IsEnum(CardCategory, {
     message:

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  CalendarDays,
+  CalendarDays, ImagePlus, Copy,
   Check,
   Gift,
   Loader2,
@@ -27,6 +27,7 @@ import {
 } from '../../components/admin/wishlists/WishlistUI';
 
 import { useSecretSantaEvents } from '../../hooks/secret_santa_events';
+import { uploadEventImage } from '../../api/secret_santa_events';
 import { useSecretSantaAssignments } from '../../hooks/secret_santa_assignments.hook';
 
 import type {
@@ -184,6 +185,17 @@ export default function SecretSantaAdmin() {
     },
   ];
 
+  const uploadCover = async (eventId: string, file?: File) => {
+    if (!file || busy) return;
+    setBusy(true); setError('');
+    try {
+      await uploadEventImage(eventId, file);
+      await refreshAfterMutation();
+      setNotice('Portada guardada en Cloudinary.');
+    } catch (caught) { setError(getErrorMessage(caught)); }
+    finally { setBusy(false); }
+  };
+
   const refresh = async () => {
     if (busy) return;
 
@@ -304,13 +316,9 @@ export default function SecretSantaAdmin() {
       let count: number | undefined;
 
       try {
-        const assignments = await drawAssignments(eventId);
-
-        if (!assignments || assignments.length === 0) {
-          throw new Error('El servidor no devolvió asignaciones.');
-        }
-
-        count = assignments.length;
+        const draw = await drawAssignments(eventId);
+        if (draw.status !== 'drawn') throw new Error('El servidor no confirmó el sorteo.');
+        count = draw.participants;
       } catch (drawError) {
         // La respuesta puede perderse después de que el servidor guarde.
         // Comprobamos el estado; nunca repetimos el POST automáticamente.
@@ -351,7 +359,7 @@ export default function SecretSantaAdmin() {
 
       <main className="min-w-0 flex-1">
         <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
-          <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-700 via-purple-600 to-fuchsia-600 p-6 text-white sm:p-8">
+          <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-700 via-red-600 to-rose-600 p-6 text-white sm:p-8">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full border-[30px] border-white/10"
@@ -368,7 +376,7 @@ export default function SecretSantaAdmin() {
                   Amigo secreto
                 </h1>
 
-                <p className="mt-3 text-sm leading-6 text-violet-100">
+                <p className="mt-3 text-sm leading-6 text-red-100">
                   Crea el evento, reúne a tu grupo y deja que la ruleta
                   dé inicio al intercambio.
                 </p>
@@ -382,7 +390,7 @@ export default function SecretSantaAdmin() {
                   setError('');
                   setFormOpen(true);
                 }}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-violet-700 shadow-lg transition hover:bg-violet-50 disabled:opacity-50"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-red-700 shadow-lg transition hover:bg-red-50 disabled:opacity-50"
               >
                 <Plus className="h-5 w-5" />
                 Crear evento
@@ -409,11 +417,11 @@ export default function SecretSantaAdmin() {
             {stats.map(({ label, value, icon: Icon }) => (
               <article
                 key={label}
-                className="rounded-2xl border border-violet-100 p-4 sm:p-5"
+                className="rounded-2xl border border-red-100 p-4 sm:p-5"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm text-slate-500">{label}</span>
-                  <Icon className="h-5 w-5 text-violet-400" />
+                  <Icon className="h-5 w-5 text-red-400" />
                 </div>
                 <p className="mt-3 text-3xl font-bold text-slate-900">
                   {value}
@@ -423,12 +431,12 @@ export default function SecretSantaAdmin() {
           </section>
 
           {upcomingEvent && (
-            <div className="flex items-start gap-4 rounded-2xl border border-fuchsia-100 bg-fuchsia-50/60 p-5">
-              <span className="rounded-xl bg-white p-3 text-fuchsia-600">
+            <div className="flex items-start gap-4 rounded-2xl border border-rose-100 bg-rose-50/60 p-5">
+              <span className="rounded-xl bg-white p-3 text-rose-600">
                 <Gift className="h-6 w-6" />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-fuchsia-700">
+                <p className="text-xs font-bold uppercase tracking-wider text-rose-700">
                   Próximo intercambio
                 </p>
                 <p className="mt-1 break-words font-bold text-slate-900">
@@ -450,7 +458,7 @@ export default function SecretSantaAdmin() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar un evento..."
-                className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
               />
             </div>
 
@@ -460,7 +468,7 @@ export default function SecretSantaAdmin() {
               onChange={(e) =>
                 setStatus(e.target.value as 'all' | SecretSantaEventStatus)
               }
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-violet-100"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-red-100"
             >
               <option value="all">Todos los eventos</option>
               <option value="draft">Por sortear</option>
@@ -474,22 +482,22 @@ export default function SecretSantaAdmin() {
               disabled={busy}
               onClick={() => void refresh()}
               aria-label="Actualizar eventos"
-              className="flex items-center justify-center rounded-xl border border-violet-200 p-3 text-violet-600 hover:bg-violet-50 disabled:opacity-40"
+              className="flex items-center justify-center rounded-xl border border-red-200 p-3 text-red-600 hover:bg-red-50 disabled:opacity-40"
             >
               <RefreshCw className={`h-5 w-5 ${busy ? 'animate-spin' : ''}`} />
             </button>
           </section>
 
           {busy && (
-            <p role="status" className="flex items-center gap-2 text-sm text-violet-600">
+            <p role="status" className="flex items-center gap-2 text-sm text-red-600">
               <Loader2 className="h-4 w-4 animate-spin" />
               Procesando...
             </p>
           )}
 
           {!busy && filteredEvents.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-violet-200 bg-violet-50/40 p-10 text-center">
-              <Gift className="mx-auto h-12 w-12 text-violet-400" />
+            <div className="rounded-3xl border border-dashed border-red-200 bg-red-50/40 p-10 text-center">
+              <Gift className="mx-auto h-12 w-12 text-red-400" />
               <h2 className="mt-4 text-lg font-bold text-slate-900">
                 No hay eventos para mostrar
               </h2>
@@ -504,10 +512,11 @@ export default function SecretSantaAdmin() {
               {filteredEvents.map((event) => (
                 <article
                   key={event.id}
-                  className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-sm transition hover:border-violet-300 hover:shadow-lg hover:shadow-violet-100/50"
+                  className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm transition hover:border-red-300 hover:shadow-lg hover:shadow-red-100/50"
                 >
-                  <div className="flex items-center justify-between gap-3 bg-violet-50/70 p-5">
-                    <span className="rounded-2xl bg-white p-3 text-violet-600 shadow-sm">
+                  {event.imageUrl && <img alt={`Portada de ${event.name}`} src={event.imageUrl} className="h-36 w-full object-cover" />}
+                  <div className="flex items-center justify-between gap-3 bg-red-50/70 p-5">
+                    <span className="rounded-2xl bg-white p-3 text-red-600 shadow-sm">
                       {event.status === 'completed' ? (
                         <Trophy className="h-6 w-6" />
                       ) : (
@@ -520,7 +529,7 @@ export default function SecretSantaAdmin() {
                         event.status === 'draft'
                           ? 'bg-amber-100 text-amber-800'
                           : event.status === 'drawn'
-                            ? 'bg-violet-100 text-violet-700'
+                            ? 'bg-red-100 text-red-700'
                             : event.status === 'completed'
                               ? 'bg-emerald-100 text-emerald-800'
                               : 'bg-slate-200 text-slate-600'
@@ -543,7 +552,7 @@ export default function SecretSantaAdmin() {
                       <p className="text-xs text-slate-500">
                         Presupuesto por regalo
                       </p>
-                      <p className="mt-1 text-xl font-bold text-violet-700">
+                      <p className="mt-1 text-xl font-bold text-red-700">
                         {event.budget === null
                           ? 'Por definir'
                           : formatPrice(String(event.budget), event.currencyCode)}
@@ -566,11 +575,22 @@ export default function SecretSantaAdmin() {
                     </dl>
 
                     {(event.status === 'draft' || event.status === 'drawn') && (
-                      <p className="mt-4 rounded-xl bg-fuchsia-50 px-3 py-2 text-xs font-semibold text-fuchsia-700">
+                      <p className="mt-4 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
                         {deliveryLabel(event.giftDeliveryDate, now)}
                       </p>
                     )}
 
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-red-200 px-3 text-xs font-bold text-red-700">
+                        <ImagePlus size={15}/> Subir portada
+                        <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={busy}
+                          onChange={input => { void uploadCover(event.id, input.target.files?.[0]); input.currentTarget.value=''; }}/>
+                      </label>
+                      <button type="button" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-200 px-3 text-xs font-bold text-red-700"
+                        onClick={() => void navigator.clipboard.writeText(event.id).then(() => setNotice('ID de evento copiado para invitados.')).catch(() => setError('No se pudo copiar el ID.'))}>
+                        <Copy size={15}/> Copiar ID del evento
+                      </button>
+                    </div>
                     <div className="mt-auto space-y-3 pt-5">
                       {event.status === 'draft' && (
                         <button
@@ -580,7 +600,7 @@ export default function SecretSantaAdmin() {
                             setError('');
                             setRouletteEvent(event);
                           }}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-bold text-white hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-40"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-4 py-3 text-sm font-bold text-white hover:from-red-700 hover:to-rose-700 disabled:opacity-40"
                         >
                           <Sparkles className="h-4 w-4" />
                           Abrir ruleta
@@ -588,7 +608,7 @@ export default function SecretSantaAdmin() {
                       )}
 
                       {event.status === 'drawn' && (
-                        <div className="rounded-xl bg-violet-50 p-3 text-center text-sm font-semibold text-violet-700">
+                        <div className="rounded-xl bg-red-50 p-3 text-center text-sm font-semibold text-red-700">
                           🎁 Sorteo realizado
                         </div>
                       )}
@@ -603,7 +623,7 @@ export default function SecretSantaAdmin() {
                               setError('');
                               setFormOpen(true);
                             }}
-                            className="inline-flex items-center gap-2 rounded-xl border border-violet-200 px-3 py-2 text-sm font-semibold text-violet-600 hover:bg-violet-50 disabled:opacity-40"
+                            className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-40"
                           >
                             <Pencil className="h-4 w-4" />
                             Editar
@@ -720,7 +740,7 @@ export default function SecretSantaAdmin() {
                 type="button"
                 disabled={busy}
                 onClick={() => void confirmAction()}
-                className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 Confirmar

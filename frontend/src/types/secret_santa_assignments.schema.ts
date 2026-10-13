@@ -34,3 +34,9 @@ export interface SecretSantaSummaryItem {
   assignedAt: string;
   deliveredAt: string | null;
 }
+export interface SecretSantaDrawResponse { message: string; eventId: string; participants: number; status: 'drawn'; }
+export interface SecretSantaPrivateAssignment {
+  id: string; eventId: string; giftStatus: GiftStatus; assignedAt: string; deliveredAt: string | null;
+  receiver: { id: string; name: string; avatarUrl?: string | null; isGuest: boolean };
+  wishlist: Array<{ name: string; description?: string | null; note?: string | null; productUrl?: string | null; imageUrl?: string | null }>;
+}

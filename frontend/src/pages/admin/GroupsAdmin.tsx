@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Archive, CheckCircle2, ChevronLeft, ChevronRight, Copy,
   Globe, Link2, LoaderCircle, LockKeyhole, Pencil, Plus,
-  RefreshCw, Search, ShieldCheck, Trash2, Users, X,
+  RefreshCw, Search, ShieldCheck, Trash2, Users, X, QrCode, ImagePlus,
 } from 'lucide-react';
 
 import AdminSidebar from '../../components/admin/AdminSidebar';
@@ -13,7 +13,7 @@ import {
 } from '../../components/admin/groups/GroupDialog';
 
 import {
-  archiveGroup, createGroup, deleteGroup, getGroups,
+  archiveGroup, createGroup, deleteGroup, getAdminGroups, getInvitationQr, uploadGroupImage,
   updateGroup, updateGroupInvitation,
 } from '../../api/groups';
 
@@ -37,7 +37,7 @@ function GroupImage({ group }: { group: Group }) {
   const [failed, setFailed] = useState('');
 
   return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-purple-100 text-purple-600">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-red-100 text-red-600">
       {group.imageUrl && group.imageUrl !== failed ? (
         <img
           src={group.imageUrl}
@@ -70,8 +70,8 @@ export default function GroupsAdmin() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white p-6">
         <section className="text-center">
-          <ShieldCheck size={44} className="mx-auto mb-4 text-purple-600" />
-          <h1 className="text-2xl font-black text-purple-950">Acceso restringido</h1>
+          <ShieldCheck size={44} className="mx-auto mb-4 text-red-600" />
+          <h1 className="text-2xl font-black text-red-950">Acceso restringido</h1>
           <p className="mt-3 text-sm text-slate-500">Esta sección requiere una cuenta administradora.</p>
         </section>
       </main>
@@ -100,6 +100,8 @@ function GroupsContent() {
   const [status, setStatus] = useState('');
   const [visibility, setVisibility] = useState('');
   const [page, setPage] = useState(1);
+  const [qrInfo, setQrInfo] = useState<{ group: Group; image: string } | null>(null);
+  const [uploadingGroup, setUploadingGroup] = useState<string | null>(null);
 
   const loadLock = useRef(false);
 
@@ -111,7 +113,7 @@ function GroupsContent() {
     setLoadError('');
 
     try {
-      const data = await getGroups();
+      const data = await getAdminGroups();
       setGroups(data);
       setLoaded(true);
     } catch (cause) {
@@ -182,6 +184,24 @@ function GroupsContent() {
     }
   };
 
+  const showQr = async (group: Group) => {
+    setActionError('');
+    try {
+      const response = await getInvitationQr(group.id);
+      setQrInfo({ group, image: response.qrDataUrl });
+    } catch (cause) { setActionError(groupError(cause)); }
+  };
+
+  const uploadImage = async (group: Group, file?: File) => {
+    if (!file) return;
+    setUploadingGroup(group.id);
+    try {
+      replace(await uploadGroupImage(group.id, file));
+      setNotice('Imagen del grupo actualizada en Cloudinary.');
+    } catch (cause) { setActionError(groupError(cause)); }
+    finally { setUploadingGroup(null); }
+  };
+
   const copyInvitation = async (group: Group) => {
     const value = group.invitationUrl || group.invitationCode;
     if (!value) return;
@@ -205,15 +225,15 @@ function GroupsContent() {
       <div className="mx-auto max-w-7xl">
         <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-purple-500">ChristmasCards · Administración</p>
-            <h1 className="text-3xl font-black text-purple-950 sm:text-4xl">Grupos</h1>
+            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-red-500">ChristmasCards · Administración</p>
+            <h1 className="text-3xl font-black text-red-950 sm:text-4xl">Grupos</h1>
             <p className="mt-2 text-sm leading-6 text-slate-500">Organiza tus comunidades, sus miembros e invitaciones.</p>
           </div>
           <button
             type="button"
             disabled={loading}
             onClick={() => open({ type: 'create' })}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-purple-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-purple-200 hover:bg-purple-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:opacity-40"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-red-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-red-200 hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-40"
           >
             <Plus size={19} /> Crear grupo
           </button>
@@ -225,11 +245,11 @@ function GroupsContent() {
             { label: 'Grupos activos', value: groups.filter(group => group.status === 'active').length, icon: CheckCircle2 },
             { label: 'Archivados', value: groups.filter(group => group.status === 'archived').length, icon: Archive },
           ].map(({ label, value, icon: Icon }) => (
-            <article key={label} className="flex items-center gap-4 rounded-2xl border border-purple-100 bg-white p-5">
-              <span className="rounded-2xl bg-purple-50 p-3 text-purple-600"><Icon size={24} /></span>
+            <article key={label} className="flex items-center gap-4 rounded-2xl border border-red-100 bg-white p-5">
+              <span className="rounded-2xl bg-red-50 p-3 text-red-600"><Icon size={24} /></span>
               <div>
                 <p className="text-sm text-slate-500">{label}</p>
-                <p className="mt-1 text-3xl font-black text-purple-950">{loaded ? value : '—'}</p>
+                <p className="mt-1 text-3xl font-black text-red-950">{loaded ? value : '—'}</p>
               </div>
             </article>
           ))}
@@ -254,8 +274,8 @@ function GroupsContent() {
           </div>
         )}
 
-        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50/40 p-4">
-          <label className="flex min-h-12 min-w-0 basis-full items-center gap-2 rounded-xl border border-purple-200 bg-white px-3 text-purple-500 focus-within:ring-2 focus-within:ring-purple-300 lg:flex-1 lg:basis-64">
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-red-100 bg-red-50/40 p-4">
+          <label className="flex min-h-12 min-w-0 basis-full items-center gap-2 rounded-xl border border-red-200 bg-white px-3 text-red-500 focus-within:ring-2 focus-within:ring-red-300 lg:flex-1 lg:basis-64">
             <Search size={18} className="shrink-0" />
             <input
               aria-label="Buscar grupos"
@@ -269,7 +289,7 @@ function GroupsContent() {
             aria-label="Filtrar por estado"
             value={status}
             onChange={event => { setStatus(event.target.value); setPage(1); }}
-            className="min-h-12 min-w-0 flex-1 rounded-xl border border-purple-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-purple-300 lg:flex-none"
+            className="min-h-12 min-w-0 flex-1 rounded-xl border border-red-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-red-300 lg:flex-none"
           >
             <option value="">Todos los estados</option>
             <option value="active">Activos</option>
@@ -279,7 +299,7 @@ function GroupsContent() {
             aria-label="Filtrar por visibilidad"
             value={visibility}
             onChange={event => { setVisibility(event.target.value); setPage(1); }}
-            className="min-h-12 min-w-0 flex-1 rounded-xl border border-purple-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-purple-300 lg:flex-none"
+            className="min-h-12 min-w-0 flex-1 rounded-xl border border-red-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-red-300 lg:flex-none"
           >
             <option value="">Toda visibilidad</option>
             <option value="private">Privados</option>
@@ -290,25 +310,25 @@ function GroupsContent() {
             aria-label="Actualizar grupos"
             disabled={loading}
             onClick={() => void load()}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-purple-200 bg-white text-purple-700 hover:bg-purple-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-red-200 bg-white text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
           >
             <RefreshCw size={19} className={loading ? 'motion-safe:animate-spin' : ''} />
           </button>
         </div>
 
         {loading && (
-          <p role="status" className="mb-5 flex items-center gap-2 text-sm text-purple-700">
+          <p role="status" className="mb-5 flex items-center gap-2 text-sm text-red-700">
             <LoaderCircle size={18} className="motion-safe:animate-spin" /> Cargando grupos…
           </p>
         )}
 
         <section aria-label="Listado de grupos" aria-busy={loading} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visibleGroups.map(group => (
-            <article key={group.id} className="flex min-w-0 flex-col rounded-3xl border border-purple-100 bg-white p-5 shadow-sm">
+            <article key={group.id} className="flex min-w-0 flex-col rounded-3xl border border-red-100 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-start gap-3">
                 <GroupImage group={group} />
                 <div className="min-w-0 flex-1">
-                  <h2 className="break-words text-lg font-black text-purple-950">{group.name}</h2>
+                  <h2 className="break-words text-lg font-black text-red-950">{group.name}</h2>
                   <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
                     group.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
                   }`}>
@@ -321,7 +341,7 @@ function GroupsContent() {
 
               <div className="mb-4 space-y-2 text-xs text-slate-600">
                 <p className="flex items-center gap-2">
-                  {group.visibility === 'public' ? <Globe size={15} className="text-purple-500" /> : <LockKeyhole size={15} className="text-purple-500" />}
+                  {group.visibility === 'public' ? <Globe size={15} className="text-red-500" /> : <LockKeyhole size={15} className="text-red-500" />}
                   {group.visibility === 'public' ? 'Público' : 'Privado'} · {JOIN_LABELS[group.joinMode]}
                 </p>
                 <p>Capacidad: {group.maximumMembers === null ? 'sin límite configurado' : `${group.maximumMembers} miembros`}</p>
@@ -332,25 +352,36 @@ function GroupsContent() {
               </div>
 
               {(group.invitationUrl || group.invitationCode) && (
-                <div className="mb-4 rounded-xl bg-purple-50 p-3">
-                  <p className="mb-1 text-xs font-bold text-purple-800">{group.invitationUrl ? 'Enlace de invitación' : 'Código de invitación'}</p>
-                  <p className="select-all break-all text-xs leading-5 text-purple-600">{group.invitationUrl || group.invitationCode}</p>
+                <div className="mb-4 rounded-xl bg-red-50 p-3">
+                  <p className="mb-1 text-xs font-bold text-red-800">{group.invitationUrl ? 'Enlace de invitación' : 'Código de invitación'}</p>
+                  <p className="select-all break-all text-xs leading-5 text-red-600">{group.invitationUrl || group.invitationCode}</p>
                   <button
                     type="button"
                     onClick={() => void copyInvitation(group)}
-                    className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-xs font-bold text-purple-700 hover:bg-purple-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                    className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-xs font-bold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                   >
                     <Copy size={14} /> Copiar
                   </button>
                 </div>
               )}
 
-              <div className="mt-auto grid grid-cols-2 gap-2 border-t border-purple-100 pt-4">
+              <div className="mb-3 grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => void showQr(group)} disabled={!group.invitationCode}
+                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-xs font-bold text-red-800 disabled:opacity-40">
+                  <QrCode size={16}/> Ver QR
+                </button>
+                <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-200 bg-white text-xs font-bold text-red-800">
+                  <ImagePlus size={16}/> {uploadingGroup === group.id ? 'Subiendo...' : 'Subir foto'}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only"
+                    disabled={uploadingGroup !== null} onChange={event => { void uploadImage(group, event.target.files?.[0]); event.currentTarget.value = ''; }}/>
+                </label>
+              </div>
+              <div className="mt-auto grid grid-cols-2 gap-2 border-t border-red-100 pt-4">
                 <button
                   type="button"
                   disabled={loading}
                   onClick={() => open({ type: 'members', group })}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-purple-700 px-3 text-sm font-bold text-white hover:bg-purple-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-700 px-3 text-sm font-bold text-white hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                 >
                   <Users size={16} /> Miembros
                 </button>
@@ -358,7 +389,7 @@ function GroupsContent() {
                   type="button"
                   disabled={loading || group.status === 'archived'}
                   onClick={() => open({ type: 'edit', group })}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-purple-200 px-3 text-sm font-bold text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-red-200 px-3 text-sm font-bold text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                 >
                   <Pencil size={16} /> Editar
                 </button>
@@ -366,7 +397,7 @@ function GroupsContent() {
                   type="button"
                   disabled={loading || group.status === 'archived'}
                   onClick={() => open({ type: 'invitation', group })}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-purple-50 px-3 text-xs font-bold text-purple-700 hover:bg-purple-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-50 px-3 text-xs font-bold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                 >
                   <Link2 size={15} /> Renovar invitación
                 </button>
@@ -374,7 +405,7 @@ function GroupsContent() {
                   type="button"
                   disabled={loading || group.status === 'archived'}
                   onClick={() => open({ type: 'archive', group })}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 text-xs font-bold text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 text-xs font-bold text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                 >
                   <Archive size={15} /> Archivar
                 </button>
@@ -392,15 +423,15 @@ function GroupsContent() {
         </section>
 
         {!loading && loaded && !visibleGroups.length && (
-          <div className="rounded-3xl border border-dashed border-purple-200 px-5 py-16 text-center">
-            <Users size={42} className="mx-auto mb-4 text-purple-300" />
-            <h2 className="text-xl font-bold text-purple-950">No hay grupos para mostrar</h2>
+          <div className="rounded-3xl border border-dashed border-red-200 px-5 py-16 text-center">
+            <Users size={42} className="mx-auto mb-4 text-red-300" />
+            <h2 className="text-xl font-bold text-red-950">No hay grupos para mostrar</h2>
             <p className="mt-2 text-sm text-slate-500">Crea un grupo o modifica los filtros.</p>
             {(query || status || visibility) && (
               <button
                 type="button"
                 onClick={() => { setQuery(''); setStatus(''); setVisibility(''); setPage(1); }}
-                className="mt-4 min-h-11 rounded-xl bg-purple-50 px-4 text-sm font-bold text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                className="mt-4 min-h-11 rounded-xl bg-red-50 px-4 text-sm font-bold text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
                 Limpiar filtros
               </button>
@@ -416,7 +447,7 @@ function GroupsContent() {
               aria-label="Página anterior"
               disabled={currentPage <= 1}
               onClick={() => setPage(currentPage - 1)}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-purple-200 text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-200 text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-30"
             >
               <ChevronLeft size={19} />
             </button>
@@ -425,13 +456,29 @@ function GroupsContent() {
               aria-label="Página siguiente"
               disabled={currentPage >= pages}
               onClick={() => setPage(currentPage + 1)}
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-purple-200 text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-30"
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-200 text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-30"
             >
               <ChevronRight size={19} />
             </button>
           </nav>
         </footer>
       </div>
+
+      {qrInfo && (
+        <div role="dialog" aria-modal="true" aria-label="Código QR de invitación" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+          <section className="w-full max-w-md rounded-3xl bg-white p-6 text-center shadow-2xl">
+            <h2 className="text-xl font-black text-red-900">Invita a tus amigos</h2>
+            <p className="mt-2 text-sm text-slate-600">{qrInfo.group.name}</p>
+            <img src={qrInfo.image} alt="QR de invitación al grupo" className="mx-auto mt-5 h-60 w-60" />
+            <p className="mt-2 break-all text-xs text-slate-500">{qrInfo.group.invitationUrl}</p>
+            <div className="mt-5 flex justify-center gap-2">
+              <a href={qrInfo.image} download={`qr-${qrInfo.group.name}.png`}
+                className="rounded-xl bg-red-700 px-4 py-3 text-sm font-bold text-white">Guardar QR</a>
+              <button type="button" onClick={() => setQrInfo(null)} className="rounded-xl border px-4 py-3 text-sm font-bold">Cerrar</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {(modal?.type === 'create' || modal?.type === 'edit') && (
         <GroupModal

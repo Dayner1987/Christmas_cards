@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { authStorage } from '../config/auth.storage';
+import { api } from './http';
 
 import type {
   CreateGroupMember,
@@ -7,24 +6,7 @@ import type {
   UpdateGroupMember,
 } from '../types/group_members.schema';
 
-const API_URL = 'http://localhost:3000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export const getGroupMembers = async (
   groupId: string,
@@ -54,8 +36,8 @@ export const updateGroupMember = async (
   data: UpdateGroupMember,
 ): Promise<GroupMember> => {
   const response = await api.patch<GroupMember>(
-    `/groups/${groupId}/members/${userId}`,
-    data,
+    `/groups/${groupId}/members/${userId}/role`,
+    { role: data.role },
   );
 
   return response.data;
@@ -73,3 +55,12 @@ export const leaveGroup = async (
 ): Promise<void> => {
   await api.post(`/groups/${groupId}/members/leave`);
 };
+export async function approveGroupMember(groupId: string, userId: string): Promise<GroupMember> {
+  return (await api.patch<GroupMember>(`/groups/${groupId}/members/${userId}/approve`)).data;
+}
+export async function approveGuestMember(groupId: string, guestId: string): Promise<unknown> {
+  return (await api.patch(`/groups/${groupId}/guests/${guestId}/approve`)).data;
+}
+export async function removeGuestMember(groupId: string, guestId: string): Promise<void> {
+  await api.delete(`/groups/${groupId}/guests/${guestId}`);
+}

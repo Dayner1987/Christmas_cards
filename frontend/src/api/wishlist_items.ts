@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { authStorage } from '../config/auth.storage';
+import { api, imageForm } from './http';
 
 import type {
   CreateWishlistItem,
@@ -7,24 +6,7 @@ import type {
   WishlistItem,
 } from '../types/wishlist_items.schema';
 
-const API_URL = 'http://localhost:3000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export const getWishlistItems = async (
   wishlistId: string,
@@ -80,3 +62,9 @@ export const deleteWishlistItem = async (
     `/wishlists/${wishlistId}/items/${itemId}`,
   );
 };
+export async function uploadWishlistItemImage(wishlistId: string, itemId: string, file: File): Promise<WishlistItem> {
+  return (await api.post<WishlistItem>(`/wishlists/${wishlistId}/items/${itemId}/image`, imageForm(file))).data;
+}
+export async function deleteWishlistItemImage(wishlistId: string, itemId: string): Promise<WishlistItem> {
+  return (await api.delete<WishlistItem>(`/wishlists/${wishlistId}/items/${itemId}/image`)).data;
+}

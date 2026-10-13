@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { authStorage } from '../config/auth.storage';
+import { api } from './http';
 
 import type {
   CreateUserCard,
@@ -7,24 +6,7 @@ import type {
   UserCard,
 } from '../types/user_cards.schema';
 
-const API_URL = 'http://localhost:3000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export const createUserCard = async (
   data: CreateUserCard,

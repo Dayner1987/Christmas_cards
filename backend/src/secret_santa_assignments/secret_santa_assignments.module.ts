@@ -10,6 +10,8 @@ import {
   SecretSantaAssignmentsService,
 } from './secret_santa_assignments.service';
 
+import { SecretSantaGuestsController } from './secret_santa_guests.controller';
+
 import {
   SecretSantaAssignmentsController,
 } from './secret_santa_assignments.controller';
@@ -34,6 +36,8 @@ import {
   User,
 } from '../users/entities/user.entity';
 
+import { GroupMembersModule } from '../group_members/group_members.module';
+
 import {
   AuthModule,
 } from '../auth/auth.module';
@@ -53,10 +57,12 @@ import {
     ]),
 
     AuthModule,
+    GroupMembersModule,
   ],
 
   controllers: [
     SecretSantaAssignmentsController,
+    SecretSantaGuestsController,
   ],
 
   providers: [

@@ -101,7 +101,7 @@ export function ProductImage({
 
   if (!validSource || failedSource === validSource) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-violet-50 text-violet-300">
+      <div className="flex h-full w-full items-center justify-center bg-red-50 text-red-300">
         <ImageIcon className="h-10 w-10" />
       </div>
     );
@@ -171,7 +171,7 @@ export function WishlistModal({
         wide ? 'max-w-3xl' : 'max-w-lg'
       }`}
     >
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-violet-100 bg-white px-5 py-4">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-red-100 bg-white px-5 py-4">
         <h2
           id={titleId}
           className="text-lg font-bold text-slate-900"
@@ -184,7 +184,7 @@ export function WishlistModal({
           disabled={busy}
           onClick={onClose}
           aria-label="Cerrar ventana"
-          className="rounded-xl p-2 text-slate-500 transition hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-40"
+          className="rounded-xl p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
         >
           <X className="h-5 w-5" />
         </button>

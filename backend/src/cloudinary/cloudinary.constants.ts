@@ -18,6 +18,10 @@ export const IMAGE_ALLOWED_FORMATS = [
 export const IMAGE_FOLDERS = {
   USERS: 'christmas_cards/users',
   CARDS: 'christmas_cards/cards',
+  GROUPS: 'christmas_cards/groups',
+  GUESTS: 'christmas_cards/guests',
+  EVENTS: 'christmas_cards/events',
+  WISHLIST_ITEMS: 'christmas_cards/wishlist_items',
 } as const;
 
 export type ImageFolder =

@@ -33,6 +33,8 @@ import {
 
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import { useCards } from '../../hooks/cards.hook';
+import { uploadCardImage } from '../../api/cards';
+import type { CardImageSlot } from '../../api/cards';
 import { authStorage } from '../../config/auth.storage';
 import type {
   Card,
@@ -123,15 +125,6 @@ function getErrorMessage(error: unknown): string {
     : 'Ocurrió un error. Intenta nuevamente.';
 }
 
-function isHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol);
-  } catch {
-    return false;
-  }
-}
-
 function formatDate(value: string): string {
   const date = new Date(value);
 
@@ -157,7 +150,7 @@ function CardImage({
 
   if (!src || failedSource === src) {
     return (
-      <div className="flex h-full min-h-40 w-full flex-col items-center justify-center gap-3 bg-violet-50 p-6 text-violet-400">
+      <div className="flex h-full min-h-40 w-full flex-col items-center justify-center gap-3 bg-red-50 p-6 text-red-400">
         <ImageIcon className="h-10 w-10" />
         <span className="text-center text-sm">
           Imagen no disponible
@@ -230,7 +223,7 @@ function Modal({
         wide ? 'max-w-4xl' : 'max-w-lg'
       }`}
     >
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-violet-100 bg-white px-5 py-4 sm:px-6">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-red-100 bg-white px-5 py-4 sm:px-6">
         <h2
           id={titleId}
           className="text-lg font-bold text-slate-900"
@@ -243,7 +236,7 @@ function Modal({
           disabled={busy}
           onClick={onClose}
           aria-label="Cerrar ventana"
-          className="rounded-xl p-2 text-slate-500 transition hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-40"
+          className="rounded-xl p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
         >
           <X className="h-5 w-5" />
         </button>
@@ -287,6 +280,14 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [form, setForm] = useState<CardForm>({ ...emptyForm });
   const [saving, setSaving] = useState(false);
+  const [imageFiles, setImageFiles] = useState<Partial<Record<CardImageSlot, File>>>({});
+  const [previewFileUrl, setPreviewFileUrl] = useState('');
+  useEffect(() => {
+    const file = imageFiles.front;
+    if (!file) { setPreviewFileUrl(''); return; }
+    const url = URL.createObjectURL(file); setPreviewFileUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFiles.front]);
   const [listError, setListError] = useState('');
   const [modalError, setModalError] = useState('');
   const [notice, setNotice] = useState('');
@@ -379,6 +380,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
   const openCreate = () => {
     setSelectedCard(null);
     setModalError('');
+    setImageFiles({});
     setForm({
       ...emptyForm,
       category: category === 'all' ? 'christmas' : category,
@@ -394,10 +396,11 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
     setModalError('');
 
     if (mode === 'edit') {
+      setImageFiles({});
       setForm({
         name: card.name,
         description: card.description ?? '',
-        frontImageUrl: card.frontImageUrl,
+        frontImageUrl: card.frontImageUrl ?? '',
         backgroundImageUrl: card.backgroundImageUrl ?? '',
         previewImageUrl: card.previewImageUrl ?? '',
         category: card.category,
@@ -438,64 +441,37 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
     setModalError('');
 
     const name = form.name.trim();
-    const frontImageUrl = form.frontImageUrl.trim();
-    const backgroundImageUrl = form.backgroundImageUrl.trim();
-    const previewImageUrl = form.previewImageUrl.trim();
-
     if (!name) {
       setModalError('Escribe el nombre de la tarjeta.');
       return;
     }
-
-    if (
-      !isHttpUrl(frontImageUrl) ||
-      (backgroundImageUrl && !isHttpUrl(backgroundImageUrl)) ||
-      (previewImageUrl && !isHttpUrl(previewImageUrl))
-    ) {
-      setModalError('Las imágenes deben usar una URL válida con http o https.');
+    if (modal === 'create' && !imageFiles.front) {
+      setModalError('Selecciona una imagen principal para la tarjeta.');
       return;
     }
-
-    // El contrato actual no admite null para quitar imágenes existentes.
-    if (
-      modal === 'edit' &&
-      selectedCard &&
-      (
-        (selectedCard.backgroundImageUrl && !backgroundImageUrl) ||
-        (selectedCard.previewImageUrl && !previewImageUrl)
-      )
-    ) {
-      setModalError(
-        'Puedes reemplazar las imágenes opcionales. Para quitarlas, el backend y UpdateCard deben admitir null.',
-      );
-      return;
-    }
-
     const payload: CreateCard = {
       name,
       description: form.description.trim(),
-      frontImageUrl,
       category: form.category,
       isPublic: form.isPublic,
-      ...(backgroundImageUrl ? { backgroundImageUrl } : {}),
-      ...(previewImageUrl ? { previewImageUrl } : {}),
     };
 
     setSaving(true);
 
     try {
-      if (modal === 'edit' && selectedCard) {
-        await updateCard(selectedCard.id, payload);
-        setNotice('Tarjeta actualizada correctamente.');
-      } else if (modal === 'create') {
-        await createCard(payload);
-        setScope('mine');
-        setCategory('all');
-        setSearch('');
-        setNotice('Tarjeta creada correctamente.');
-      } else {
-        return;
+      const card = modal === 'edit' && selectedCard
+        ? await updateCard(selectedCard.id, payload)
+        : await createCard(payload);
+      // Cloudinary recibe los archivos después de guardar los metadatos.
+      // Si la imagen falla, la tarjeta permanece creada y puede editarse.
+      for (const slot of ['front', 'background', 'preview'] as const) {
+        const file = imageFiles[slot];
+        if (file) await uploadCardImage(card.id, slot, file);
       }
+      if (modal === 'create') {
+        setScope('mine'); setCategory('all'); setSearch('');
+      }
+      setNotice(modal === 'create' ? 'Tarjeta creada con imágenes de Cloudinary.' : 'Tarjeta actualizada.');
 
       setModal(null);
       setSelectedCard(null);
@@ -541,7 +517,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
     <main className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
       <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-2">
-          <span className="inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+          <span className="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
             <Sparkles className="h-3.5 w-3.5" />
             Administración
           </span>
@@ -559,7 +535,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
           type="button"
           onClick={openCreate}
           disabled={loading || saving}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-200 transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus className="h-5 w-5" />
           Nueva tarjeta
@@ -585,9 +561,9 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
         {stats.map(({ label, value, icon: Icon }) => (
           <article
             key={label}
-            className="flex items-center gap-4 rounded-2xl border border-violet-100 bg-white p-5"
+            className="flex items-center gap-4 rounded-2xl border border-red-100 bg-white p-5"
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
               <Icon className="h-6 w-6" />
             </span>
 
@@ -601,7 +577,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
         ))}
       </section>
 
-      <section className="space-y-5 rounded-3xl border border-violet-100 bg-white p-4 sm:p-6">
+      <section className="space-y-5 rounded-3xl border border-red-100 bg-white p-4 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div
             role="group"
@@ -617,10 +593,10 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                 type="button"
                 aria-pressed={scope === tab.value}
                 onClick={() => setScope(tab.value as CatalogScope)}
-                className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
                   scope === tab.value
-                    ? 'bg-white text-violet-700 shadow-sm'
-                    : 'text-slate-500 hover:text-violet-700'
+                    ? 'bg-white text-red-700 shadow-sm'
+                    : 'text-slate-500 hover:text-red-700'
                 }`}
               >
                 {tab.label}
@@ -638,7 +614,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar tarjetas..."
                 aria-label="Buscar por nombre o descripción"
-                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100"
               />
             </div>
 
@@ -648,7 +624,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
               disabled={loading || saving}
               aria-label="Actualizar tarjetas"
               title="Actualizar tarjetas"
-              className="rounded-xl border border-violet-200 px-3 text-violet-600 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-40"
+              className="rounded-xl border border-red-200 px-3 text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
             >
               <RefreshCw
                 className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`}
@@ -674,10 +650,10 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                 type="button"
                 aria-pressed={category === value}
                 onClick={() => setCategory(value)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
                   category === value
-                    ? 'border-violet-600 bg-violet-600 text-white'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:bg-violet-50'
+                    ? 'border-red-600 bg-red-600 text-white'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-red-300 hover:bg-red-50'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -713,7 +689,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                 setCategory('all');
                 setSearch('');
               }}
-              className="rounded-lg px-2 py-1 text-sm font-semibold text-violet-600 hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              className="rounded-lg px-2 py-1 text-sm font-semibold text-red-600 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             >
               Limpiar filtros
             </button>
@@ -724,14 +700,14 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
       {loading ? (
         <div
           role="status"
-          className="flex min-h-64 flex-col items-center justify-center gap-3 text-violet-600"
+          className="flex min-h-64 flex-col items-center justify-center gap-3 text-red-600"
         >
           <Loader2 className="h-8 w-8 animate-spin" />
           <p className="text-sm">Cargando tarjetas...</p>
         </div>
       ) : filteredCards.length === 0 ? (
-        <section className="flex min-h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-violet-200 bg-violet-50/40 p-8 text-center">
-          <span className="mb-4 rounded-2xl bg-white p-4 text-violet-500 shadow-sm">
+        <section className="flex min-h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center">
+          <span className="mb-4 rounded-2xl bg-white p-4 text-red-500 shadow-sm">
             <ImageIcon className="h-9 w-9" />
           </span>
 
@@ -752,7 +728,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
               type="button"
               onClick={openCreate}
               disabled={saving}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
               Crear tarjeta
@@ -770,31 +746,31 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
             return (
               <article
                 key={card.id}
-                className="group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-sm transition hover:border-violet-300 hover:shadow-lg hover:shadow-violet-100/60"
+                className="group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm transition hover:border-red-300 hover:shadow-lg hover:shadow-red-100/60"
               >
                 <button
                   type="button"
                   onClick={() => openCard('preview', card)}
                   aria-label={`Ver tarjeta ${card.name}`}
-                  className="relative block aspect-[4/3] w-full overflow-hidden bg-violet-50/60 p-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-violet-500"
+                  className="relative block aspect-[4/3] w-full overflow-hidden bg-red-50/60 p-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-red-500"
                 >
                   <CardImage
                     src={card.previewImageUrl || card.frontImageUrl}
                     alt={card.name}
                   />
 
-                  <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm">
+                  <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-red-700 shadow-sm">
                     {categoryNames[card.category]}
                   </span>
 
-                  <span className="absolute bottom-3 right-3 rounded-full bg-white p-2 text-violet-600 shadow-sm transition group-hover:bg-violet-600 group-hover:text-white">
+                  <span className="absolute bottom-3 right-3 rounded-full bg-white p-2 text-red-600 shadow-sm transition group-hover:bg-red-600 group-hover:text-white">
                     <ArrowUpRight className="h-4 w-4" />
                   </span>
                 </button>
 
                 <div className="flex flex-1 flex-col p-5">
                   <div className="mb-3 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700">
                       {card.isPublic ? (
                         <Globe className="h-3 w-3" />
                       ) : (
@@ -835,7 +811,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                           onClick={() => openCard('edit', card)}
                           aria-label={`Editar ${card.name}`}
                           title="Editar tarjeta"
-                          className="rounded-xl border border-violet-200 p-3 text-violet-600 transition hover:bg-violet-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-40"
+                          className="rounded-xl border border-red-200 p-3 text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -856,7 +832,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                     <button
                       type="button"
                       onClick={() => openCard('preview', card)}
-                      className="ml-auto inline-flex items-center justify-center gap-2 rounded-xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                      className="ml-auto inline-flex items-center justify-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                     >
                       <Eye className="h-4 w-4" />
                       Ver
@@ -904,7 +880,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                         }))
                       }
                       placeholder="Ej. Una Navidad especial"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100"
                     />
                   </label>
 
@@ -921,7 +897,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                           category: event.target.value as CardCategory,
                         }))
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100"
                     >
                       {categories
                         .filter((item) => item.value !== 'all')
@@ -951,85 +927,41 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                         }))
                       }
                       placeholder="Describe el diseño y la ocasión..."
-                      className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                      className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100"
                     />
                   </label>
 
-                  <label className="block space-y-2">
-                    <span className="text-sm font-semibold text-slate-700">
-                      URL de imagen principal *
-                    </span>
-
-                    <input
-                      required
-                      type="url"
-                      value={form.frontImageUrl}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          frontImageUrl: event.target.value,
-                        }))
-                      }
-                      placeholder="https://..."
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    />
-                  </label>
-
-                  <label className="block space-y-2">
-                    <span className="text-sm font-semibold text-slate-700">
-                      URL de imagen de fondo
-                    </span>
-
-                    <input
-                      type="url"
-                      value={form.backgroundImageUrl}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          backgroundImageUrl: event.target.value,
-                        }))
-                      }
-                      placeholder="https://... (opcional)"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    />
-                  </label>
-
-                  <label className="block space-y-2">
-                    <span className="text-sm font-semibold text-slate-700">
-                      URL de miniatura
-                    </span>
-
-                    <input
-                      type="url"
-                      value={form.previewImageUrl}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          previewImageUrl: event.target.value,
-                        }))
-                      }
-                      placeholder="https://... (opcional)"
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                    />
-                  </label>
+                  {([
+                    ['front', 'Imagen principal'],
+                    ['background', 'Imagen de fondo'],
+                    ['preview', 'Miniatura'],
+                  ] as const).map(([slot, label]) => (
+                    <label key={slot} className="block space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{label} {slot === 'front' && modal === 'create' ? '*' : ''}</span>
+                      <input type="file" accept="image/jpeg,image/png,image/webp"
+                        onChange={event => { const file = event.target.files?.[0]; if (file) setImageFiles(current => ({ ...current, [slot]: file })); }}
+                        className="block w-full rounded-xl border border-red-200 bg-white p-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-red-50 file:px-3 file:py-2 file:font-bold file:text-red-700" />
+                      {imageFiles[slot] && <p className="text-xs text-red-700">Seleccionada: {imageFiles[slot]?.name}</p>}
+                    </label>
+                  ))}
                 </div>
 
                 <div className="min-w-0 space-y-4">
-                  <div className="overflow-hidden rounded-2xl border border-violet-100 bg-violet-50/50">
-                    <div className="flex items-center gap-2 border-b border-violet-100 px-4 py-3 text-sm font-semibold text-violet-700">
+                  <div className="overflow-hidden rounded-2xl border border-red-100 bg-red-50/50">
+                    <div className="flex items-center gap-2 border-b border-red-100 px-4 py-3 text-sm font-semibold text-red-700">
                       <Eye className="h-4 w-4" />
                       Vista previa de la portada
                     </div>
 
                     <div className="aspect-[4/3] p-4">
                       <CardImage
-                        src={form.frontImageUrl.trim()}
+                        src={previewFileUrl || form.frontImageUrl.trim()}
                         alt={form.name || 'Vista previa de tarjeta'}
                       />
                     </div>
 
-                    <div className="border-t border-violet-100 bg-white p-4">
-                      <span className="text-xs font-semibold text-violet-600">
+                    <div className="border-t border-red-100 bg-white p-4">
+                      <span className="text-xs font-semibold text-red-600">
                         {categoryNames[form.category]}
                       </span>
 
@@ -1043,7 +975,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                     </div>
                   </div>
 
-                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-red-200 bg-red-50/60 p-4">
                     <input
                       type="checkbox"
                       checked={form.isPublic}
@@ -1053,14 +985,14 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                           isPublic: event.target.checked,
                         }))
                       }
-                      className="mt-1 h-4 w-4 shrink-0 accent-violet-600"
+                      className="mt-1 h-4 w-4 shrink-0 accent-red-600"
                     />
 
                     <span>
-                      <span className="block text-sm font-bold text-violet-900">
+                      <span className="block text-sm font-bold text-red-900">
                         Tarjeta pública
                       </span>
-                      <span className="mt-1 block text-xs leading-5 text-violet-700">
+                      <span className="mt-1 block text-xs leading-5 text-red-700">
                         Permite que otros usuarios encuentren este diseño
                         en el catálogo público cuando esté activo.
                       </span>
@@ -1088,7 +1020,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                 <button
                   type="submit"
                   disabled={saving || loading}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1109,7 +1041,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
           {modal === 'preview' && selectedCard && (
             <div className="space-y-6">
               <div className="grid min-w-0 gap-6 md:grid-cols-2">
-                <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
+                <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-red-100 bg-red-50/50 p-4">
                   <CardImage
                     src={selectedCard.frontImageUrl}
                     alt={selectedCard.name}
@@ -1117,7 +1049,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                 </div>
 
                 <div className="min-w-0 space-y-4">
-                  <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+                  <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
                     {categoryNames[selectedCard.category]}
                   </span>
 
@@ -1200,7 +1132,7 @@ function CardsContent({ currentUserId }: { currentUserId: string }) {
                     type="button"
                     disabled={saving || loading}
                     onClick={() => openCard('edit', selectedCard)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-40"
+                    className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
                   >
                     <Pencil className="h-4 w-4" />
                     Editar tarjeta

@@ -26,15 +26,15 @@ export default function HomeAdmin() {
 
         <main className="px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
-            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-950 via-purple-900 to-fuchsia-800 p-6 text-white shadow-lg shadow-purple-900/10 sm:p-8">
+            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-950 via-red-900 to-rose-800 p-6 text-white shadow-lg shadow-red-900/10 sm:p-8">
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full bg-fuchsia-400/20 blur-3xl"
+                className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full bg-rose-400/20 blur-3xl"
               />
 
               <div className="relative flex items-center justify-between gap-6">
                 <div>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-purple-100">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-red-100">
                     <Sparkles size={14} />
                     Panel de administración
                   </span>
@@ -43,7 +43,7 @@ export default function HomeAdmin() {
                     Bienvenido a ChristmasCards
                   </h1>
 
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-purple-100">
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-red-100">
                     Administra usuarios, tarjetas y grupos
                     desde un solo lugar.
                   </p>
@@ -57,11 +57,11 @@ export default function HomeAdmin() {
 
             <section aria-label="Estadísticas generales">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-bold text-purple-950">
+                <h2 className="text-lg font-bold text-red-950">
                   Resumen general
                 </h2>
 
-                <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">
+                <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
                   Datos de demostración
                 </span>
               </div>
@@ -72,7 +72,7 @@ export default function HomeAdmin() {
                   value="1,284"
                   change="+12% vs. mes anterior"
                   icon={Users}
-                  iconClassName="bg-purple-100 text-purple-600"
+                  iconClassName="bg-red-100 text-red-600"
                 />
 
                 <StatCard
@@ -80,7 +80,7 @@ export default function HomeAdmin() {
                   value="5,320"
                   change="+26% vs. mes anterior"
                   icon={Mail}
-                  iconClassName="bg-fuchsia-100 text-fuchsia-600"
+                  iconClassName="bg-rose-100 text-rose-600"
                 />
 
                 <StatCard
@@ -88,7 +88,7 @@ export default function HomeAdmin() {
                   value="3,890"
                   change="+16% vs. mes anterior"
                   icon={Package}
-                  iconClassName="bg-violet-100 text-violet-600"
+                  iconClassName="bg-red-100 text-red-600"
                 />
 
                 <StatCard
@@ -96,7 +96,7 @@ export default function HomeAdmin() {
                   value="128"
                   change="+6 nuevas"
                   icon={Gift}
-                  iconClassName="bg-indigo-100 text-indigo-600"
+                  iconClassName="bg-red-100 text-red-600"
                 />
               </div>
             </section>
@@ -119,16 +119,16 @@ export default function HomeAdmin() {
                 <RecentActivity />
               </div>
 
-              <div className="relative flex min-h-64 items-center justify-center overflow-hidden rounded-3xl border border-purple-100 bg-gradient-to-br from-purple-100 via-white to-fuchsia-100 p-8 text-center">
+              <div className="relative flex min-h-64 items-center justify-center overflow-hidden rounded-3xl border border-red-100 bg-gradient-to-br from-red-100 via-white to-rose-100 p-8 text-center">
                 <div>
-                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-600 text-white shadow-lg shadow-purple-200">
+                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-200">
                     <ShieldCheck
                       size={32}
                       aria-hidden="true"
                     />
                   </div>
 
-                  <h2 className="text-2xl font-black text-purple-950">
+                  <h2 className="text-2xl font-black text-red-950">
                     Compartir nos une
                   </h2>
 

@@ -182,7 +182,7 @@ export default function WishlistsContent() {
     <section className="space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+          <span className="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
             <Gift className="h-3.5 w-3.5" />
             Administración
           </span>
@@ -204,7 +204,7 @@ export default function WishlistsContent() {
             setError('');
             setFormOpen(true);
           }}
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-100 hover:bg-violet-700 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-red-100 hover:bg-red-700 disabled:opacity-50"
         >
           <Plus className="h-5 w-5" />
           Nueva lista
@@ -231,17 +231,17 @@ export default function WishlistsContent() {
         ].map((stat) => (
           <article
             key={stat.label}
-            className="rounded-2xl border border-violet-100 bg-white p-5"
+            className="rounded-2xl border border-red-100 bg-white p-5"
           >
             <p className="text-sm text-slate-500">{stat.label}</p>
-            <p className="mt-2 text-3xl font-bold text-violet-700">
+            <p className="mt-2 text-3xl font-bold text-red-700">
               {stat.value}
             </p>
           </article>
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-violet-100 bg-white p-4 sm:flex-row">
+      <div className="flex flex-col gap-3 rounded-2xl border border-red-100 bg-white p-4 sm:flex-row">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 
@@ -251,7 +251,7 @@ export default function WishlistsContent() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar listas..."
-            className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+            className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
           />
         </div>
 
@@ -259,7 +259,7 @@ export default function WishlistsContent() {
           aria-label="Filtrar listas por estado"
           value={status}
           onChange={(event) => setStatus(event.target.value)}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-violet-100"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-red-100"
         >
           <option value="all">Todos los estados</option>
           <option value="active">Activas</option>
@@ -271,22 +271,22 @@ export default function WishlistsContent() {
           disabled={busy}
           onClick={() => void refresh()}
           aria-label="Actualizar listas"
-          className="flex items-center justify-center rounded-xl border border-violet-200 p-3 text-violet-600 hover:bg-violet-50 disabled:opacity-40"
+          className="flex items-center justify-center rounded-xl border border-red-200 p-3 text-red-600 hover:bg-red-50 disabled:opacity-40"
         >
           <RefreshCw className={`h-5 w-5 ${busy ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {busy && (
-        <p role="status" className="flex items-center gap-2 text-sm text-violet-600">
+        <p role="status" className="flex items-center gap-2 text-sm text-red-600">
           <Loader2 className="h-4 w-4 animate-spin" />
           Procesando...
         </p>
       )}
 
       {!busy && filteredWishlists.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-violet-200 bg-violet-50/40 p-10 text-center">
-          <Gift className="mx-auto h-12 w-12 text-violet-400" />
+        <div className="rounded-3xl border border-dashed border-red-200 bg-red-50/40 p-10 text-center">
+          <Gift className="mx-auto h-12 w-12 text-red-400" />
           <h2 className="mt-4 text-lg font-bold text-slate-900">
             No hay listas para mostrar
           </h2>
@@ -301,10 +301,10 @@ export default function WishlistsContent() {
           {filteredWishlists.map((wishlist) => (
             <article
               key={wishlist.id}
-              className="flex min-w-0 flex-col rounded-3xl border border-violet-100 bg-white p-5 shadow-sm transition hover:border-violet-300 hover:shadow-md hover:shadow-violet-100/50"
+              className="flex min-w-0 flex-col rounded-3xl border border-red-100 bg-white p-5 shadow-sm transition hover:border-red-300 hover:shadow-md hover:shadow-red-100/50"
             >
               <div className="flex items-start justify-between gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-600">
                   <Gift className="h-6 w-6" />
                 </span>
 
@@ -325,7 +325,7 @@ export default function WishlistsContent() {
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-lg bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-700">
+                <span className="rounded-lg bg-red-50 px-2 py-1 text-xs font-semibold text-red-700">
                   {visibilityLabels[wishlist.visibility]}
                 </span>
 
@@ -356,7 +356,7 @@ export default function WishlistsContent() {
                       setError('');
                       setFormOpen(true);
                     }}
-                    className="rounded-xl border border-violet-200 p-3 text-violet-600 hover:bg-violet-50 disabled:opacity-40"
+                    className="rounded-xl border border-red-200 p-3 text-red-600 hover:bg-red-50 disabled:opacity-40"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
@@ -386,7 +386,7 @@ export default function WishlistsContent() {
                   type="button"
                   disabled={busy}
                   onClick={() => setSelectedId(wishlist.id)}
-                  className="ml-auto inline-flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-40"
+                  className="ml-auto inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
                 >
                   Productos
                   <ArrowRight className="h-4 w-4" />
@@ -431,7 +431,7 @@ export default function WishlistsContent() {
                 : '¿Restaurar esta lista para volver a gestionar sus productos?'}
             </p>
 
-            <p className="break-words rounded-xl bg-violet-50 p-4 font-semibold text-violet-800">
+            <p className="break-words rounded-xl bg-red-50 p-4 font-semibold text-red-800">
               {confirming.name}
             </p>
 
@@ -453,7 +453,7 @@ export default function WishlistsContent() {
                 type="button"
                 disabled={busy}
                 onClick={() => void changeStatus()}
-                className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 {confirming.status === 'active' ? 'Archivar' : 'Restaurar'}

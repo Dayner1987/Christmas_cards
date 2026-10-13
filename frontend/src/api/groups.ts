@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { authStorage } from '../config/auth.storage';
+import { api, imageForm } from './http';
 
 import type {
   CreateGroup,
@@ -7,24 +6,7 @@ import type {
   UpdateGroup,
 } from '../types/group.schema';
 
-const API_URL = 'http://localhost:3000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export const createGroup = async (
   data: CreateGroup,
@@ -101,3 +83,25 @@ export const deleteGroup = async (
 ): Promise<void> => {
   await api.delete(`/groups/${id}`);
 };
+export async function getAdminGroups(): Promise<Group[]> {
+  return (await api.get<Group[]>('/groups/admin')).data;
+}
+export async function getInvitationQr(id: string): Promise<{ qrDataUrl: string; invitationUrl: string }> {
+  return (await api.get(`/groups/${id}/invitation/qr`)).data;
+}
+export async function uploadGroupImage(id: string, file: File): Promise<Group> {
+  return (await api.post<Group>(`/groups/${id}/image`, imageForm(file))).data;
+}
+export async function removeGroupImage(id: string): Promise<Group> {
+  return (await api.delete<Group>(`/groups/${id}/image`)).data;
+}
+export async function joinRegisteredGroup(code: string): Promise<unknown> {
+  return (await api.post(`/groups/invitation/${encodeURIComponent(code)}/join`)).data;
+}
+export interface GuestJoinResult { memberId: string; groupId: string; name: string; status: string; guestToken: string; }
+export async function joinGuestGroup(code: string, name: string): Promise<GuestJoinResult> {
+  return (await api.post<GuestJoinResult>(`/groups/invitation/${encodeURIComponent(code)}/guests`, { name })).data;
+}
+export async function addGuestToGroup(groupId: string, name: string): Promise<GuestJoinResult> {
+  return (await api.post<GuestJoinResult>(`/groups/${groupId}/guests`, { name })).data;
+}

@@ -58,6 +58,14 @@ export class WishlistItem {
   imageUrl: string | null;
 
   @Column({
+    name: 'image_public_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  imagePublicId: string | null;
+
+  @Column({
     name: 'estimated_price',
     type: 'numeric',
     precision: 12,

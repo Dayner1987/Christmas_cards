@@ -1,12 +1,18 @@
 import {
   ForbiddenException,
   Injectable,
+  BadRequestException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { Repository } from 'typeorm';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { IMAGE_FOLDERS } from '../cloudinary/cloudinary.constants';
+import { UsersService } from '../users/users.service';
+import { UserRole } from '../users/entities/user.entity';
 
 import { CreateCardDto } from './dto/create-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
@@ -18,9 +24,12 @@ import {
 
 @Injectable()
 export class CardsService {
+  private readonly logger = new Logger(CardsService.name);
   constructor(
     @InjectRepository(Card)
     private readonly cardsRepository: Repository<Card>,
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly usersService: UsersService,
   ) {}
 
   // =====================================================
@@ -35,14 +44,15 @@ export class CardsService {
       ...createCardDto,
 
       creatorId: userId,
+      frontImageUrl: null,
+      backgroundImageUrl: null,
+      previewImageUrl: null,
 
       category:
         createCardDto.category ??
         CardCategory.CHRISTMAS,
 
-      isPublic:
-        createCardDto.isPublic ??
-        false,
+      isPublic: true,
 
       isActive: true,
     });
@@ -118,7 +128,7 @@ export class CardsService {
     const card =
       await this.findActiveCardById(id);
 
-    this.validateOwnership(
+    await this.validateOwnership(
       card,
       userId,
     );
@@ -138,7 +148,7 @@ export class CardsService {
     const card =
       await this.findActiveCardById(id);
 
-    this.validateOwnership(
+    await this.validateOwnership(
       card,
       userId,
     );
@@ -162,7 +172,7 @@ export class CardsService {
     const card =
       await this.findActiveCardById(id);
 
-    this.validateOwnership(
+    await this.validateOwnership(
       card,
       userId,
     );
@@ -177,6 +187,59 @@ export class CardsService {
       id: card.id,
     };
   }
+
+  async findAllForAdmin(actorId: string) {
+    await this.usersService.assertAccess(actorId, undefined, true);
+    return this.cardsRepository.find({ order: { createdAt: 'DESC' } });
+  }
+
+  private getSlot(slot: string): { url: 'frontImageUrl' | 'backgroundImageUrl' | 'previewImageUrl'; id: 'frontImagePublicId' | 'backgroundImagePublicId' | 'previewImagePublicId' } {
+    if (!['front', 'background', 'preview'].includes(slot)) throw new BadRequestException('Posición de imagen inválida.');
+    return { url: `${slot}ImageUrl` as any, id: `${slot}ImagePublicId` as any };
+  }
+
+  async uploadImage(cardId: string, userId: string, slot: string, file: Express.Multer.File | undefined) {
+    const card = await this.findActiveCardById(cardId);
+    await this.validateOwnership(card, userId);
+    const fields = this.getSlot(slot);
+    const uploaded = await this.cloudinaryService.uploadImage(file, IMAGE_FOLDERS.CARDS);
+    let previous: string | null = null;
+    try {
+      const updated = await this.cardsRepository.manager.transaction(async manager => {
+        const repo = manager.getRepository(Card);
+        const current = await repo.findOne({ where: { id: cardId }, lock: { mode: 'pessimistic_write' } });
+        if (!current || !current.isActive) throw new NotFoundException('Tarjeta no encontrada.');
+        previous = current[fields.id];
+        current[fields.id] = uploaded.publicId;
+        current[fields.url] = uploaded.url;
+        return repo.save(current);
+      });
+      await this.cleanupImage(previous);
+      return updated;
+    } catch (error) {
+      await this.cleanupImage(uploaded.publicId);
+      throw error;
+    }
+  }
+
+  async deleteImage(cardId: string, userId: string, slot: string) {
+    const card = await this.findActiveCardById(cardId);
+    await this.validateOwnership(card, userId);
+    const fields = this.getSlot(slot);
+    const previous = card[fields.id];
+    card[fields.url] = null;
+    card[fields.id] = null;
+    const saved = await this.cardsRepository.save(card);
+    await this.cleanupImage(previous);
+    return saved;
+  }
+
+  private async cleanupImage(id: string | null) {
+    if (!id) return;
+    try { await this.cloudinaryService.deleteImage(id); }
+    catch { this.logger.warn(`Limpieza pendiente en Cloudinary: ${id}`); }
+  }
+
 
   // =====================================================
   // BUSCAR TARJETA ACTIVA
@@ -206,11 +269,12 @@ export class CardsService {
   // VALIDAR PROPIETARIO
   // =====================================================
 
-  private validateOwnership(
+  private async validateOwnership(
     card: Card,
     userId: string,
   ) {
-    if (card.creatorId !== userId) {
+    const actor = await this.usersService.findOne(userId);
+    if (card.creatorId !== userId && actor.role !== UserRole.ADMIN) {
       throw new ForbiddenException(
         'No tienes permiso para modificar esta tarjeta',
       );

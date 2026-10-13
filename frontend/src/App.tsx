@@ -6,6 +6,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 
 import ClientHome from './pages/client/ClientHome';
+import JoinGroup from './pages/JoinGroup';
+import GuestDashboard from './pages/GuestDashboard';
 
 import HomeAdmin from './pages/admin/AdminHome';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -15,6 +17,17 @@ import WishlistsAdmin from './pages/admin/WishlistsAdmin';
 import SecretSantaAdmin from './pages/admin/SecretSantaAdmin';
 
 import EditUser from './components/admin/users/editUser';
+
+
+import ClientLayout from './components/client/ClientLayout';
+import ClientCardsPage from './pages/client/ClientCardsPage';
+import ClientEventsPage from './pages/client/ClientEventsPage';
+import ClientSpacePage from './pages/client/ClientSpacePage';
+
+import ClientGroupDetailsPage from './pages/client/ClientGroupDetailsPage';
+import ClientFriendProfilePage from './pages/client/ClientFriendProfilePage';
+
+import ClientMailboxPage from './pages/client/ClientMailboxPage';
 
 import { authStorage } from './config/auth.storage';
 
@@ -90,6 +103,10 @@ export default function App() {
       {/* Portada accesible con o sin sesión */}
       <Route path="/" element={<Home />} />
 
+      {/* Invitaciones y acceso sin cuenta */}
+      <Route path="/groups/join/:code" element={<JoinGroup />} />
+      <Route path="/guests/participation/:groupId" element={<GuestDashboard />} />
+
       {/* Autenticación */}
       <Route
         path="/login"
@@ -119,24 +136,73 @@ export default function App() {
         }
       />
 
-      {/* Cliente */}
-      <Route
-        path="/home"
-        element={
-          <ProtectedRoute allowedRole="client">
-            <ClientHome />
-          </ProtectedRoute>
-        }
-      />
+      
+{/* ================================================= */}
+{/* CLIENTE */}
+{/* ================================================= */}
 
-      <Route
-        path="/home/perfil/editar"
-        element={
-          <ProtectedRoute allowedRole="client">
-            <EditUser backPath="/home" />
-          </ProtectedRoute>
-        }
-      />
+<Route
+  path="/home"
+  element={
+    <ProtectedRoute allowedRole="client">
+      <ClientLayout />
+    </ProtectedRoute>
+  }
+>
+  {/* Inicio del cliente */}
+  <Route
+    index
+    element={<ClientHome />}
+  />
+
+  {/* Catálogo de tarjetas */}
+  <Route
+    path="cards"
+    element={<ClientCardsPage />}
+  />
+  <Route
+  path="mailbox"
+  element={<ClientMailboxPage />}
+/>
+
+  {/* Eventos de Amigo Secreto */}
+  <Route
+    path="events"
+    element={<ClientEventsPage />}
+  />
+
+  {/* Espacio personal: grupos y deseos */}
+  <Route
+    path="my-space"
+    element={<ClientSpacePage />}
+  />
+
+  {/* Detalles de un grupo */}
+  <Route
+    path="groups/:groupId"
+    element={<ClientGroupDetailsPage />}
+  />
+
+  {/* Perfil de un integrante del grupo */}
+  <Route
+    path="groups/:groupId/members/:memberId"
+    element={<ClientFriendProfilePage />}
+  />
+</Route>
+
+{/* Edición de perfil del cliente */}
+<Route
+  path="/home/perfil/editar"
+  element={
+    <ProtectedRoute allowedRole="client">
+      <EditUser backPath="/home" />
+    </ProtectedRoute>
+  }
+/>
+
+
+
+
 
       {/* Administrador */}
       <Route

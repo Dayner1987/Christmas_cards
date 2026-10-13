@@ -1,5 +1,7 @@
 import {
   ForbiddenException,
+  BadRequestException,
+  Logger,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,6 +15,11 @@ import {
 } from 'typeorm';
 
 import { randomUUID } from 'crypto';
+import * as QRCode from 'qrcode';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { IMAGE_FOLDERS } from '../cloudinary/cloudinary.constants';
+import { UserRole } from '../users/entities/user.entity';
+import { GroupVisibility } from './entities/group.entity';
 
 import {
   Group,
@@ -33,6 +40,7 @@ import {
 
 @Injectable()
 export class GroupsService {
+  private readonly logger = new Logger(GroupsService.name);
   constructor(
     @InjectRepository(Group)
     private readonly groupsRepository: Repository<Group>,
@@ -43,6 +51,8 @@ export class GroupsService {
     private readonly usersService: UsersService,
 
     private readonly configService: ConfigService,
+
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   // =====================================================
@@ -60,17 +70,18 @@ export class GroupsService {
     } = createGroupDto;
 
     // Verificar que el usuario autenticado exista
-    await this.usersService.findOne(ownerId);
+    const owner = await this.usersService.findOne(ownerId);
+    if (owner.status !== 'active') throw new ForbiddenException('Usuario inactivo.');
 
     // Generar código único de invitación
     const invitationCode = randomUUID().replace(/-/g, '');
 
     const frontendUrl =
       this.configService.get<string>('FRONTEND_URL') ||
-      'http://localhost:3001';
+      'http://localhost:5173';
 
     const invitationUrl =
-      `${frontendUrl}/groups/join/${invitationCode}`;
+      `${frontendUrl.replace(/\/+$/, '')}/groups/join/${invitationCode}`;
 
     const group = this.groupsRepository.create({
       ...groupData,
@@ -82,26 +93,17 @@ export class GroupsService {
         : null,
     });
 
-    // Primero se guarda el grupo para obtener su UUID
-    const savedGroup = await this.groupsRepository.save(group);
-
-    // Registrar al creador como propietario del grupo
-    const ownerMembership =
-      this.groupMembersRepository.create({
-        groupId: savedGroup.id,
-        userId: ownerId,
-        role: GroupMemberRole.OWNER,
-        membershipStatus: MembershipStatus.ACTIVE,
-        joinedBy: JoinedBy.OWNER,
+    // La creación del grupo y su dueño deben ser atómicas.
+    return this.groupsRepository.manager.transaction(async manager => {
+      const savedGroup = await manager.save(Group, group);
+      const membership = manager.create(GroupMember, {
+        groupId: savedGroup.id, userId: ownerId, role: GroupMemberRole.OWNER,
+        membershipStatus: MembershipStatus.ACTIVE, joinedBy: JoinedBy.OWNER,
         joinedAt: new Date(),
       });
-
-    await this.groupMembersRepository.save(
-      ownerMembership,
-    );
-
-    // Se mantiene la respuesta original: devuelve el grupo creado
-    return savedGroup;
+      await manager.save(GroupMember, membership);
+      return savedGroup;
+    });
   }
 
   // =====================================================
@@ -110,19 +112,24 @@ export class GroupsService {
   // =====================================================
 
   async findAll() {
-    return await this.groupsRepository.find({
+    const groups = await this.groupsRepository.find({
       where: {
-        status: Not(GroupStatus.DELETED),
+        status: GroupStatus.ACTIVE,
+        visibility: GroupVisibility.PUBLIC,
       },
-      order: {
-        createdAt: 'DESC',
-      },
+      order: { createdAt: 'DESC' },
     });
+    return groups.map(({ invitationCode: _code, invitationUrl: _url, imagePublicId: _imageId, ...group }) => group);
   }
 
   // =====================================================
   // BUSCAR GRUPO POR UUID
   // =====================================================
+
+  async findAllForAdmin(userId: string) {
+    await this.usersService.assertAccess(userId, undefined, true);
+    return this.groupsRepository.find({ order: { createdAt: 'DESC' } });
+  }
 
   async findOne(id: string) {
     const group = await this.groupsRepository.findOne({
@@ -147,16 +154,18 @@ export class GroupsService {
   // LISTAR GRUPOS CREADOS POR UN USUARIO
   // =====================================================
 
-  async findByOwner(ownerId: string) {
-    return await this.groupsRepository.find({
-      where: {
-        ownerId,
-        status: Not(GroupStatus.DELETED),
-      },
-      order: {
-        createdAt: 'DESC',
-      },
+  async findByOwner(userId: string) {
+    // /groups/me devuelve todos los grupos activos en los que participa
+    // el usuario, incluidos los privados y los que no ha creado.
+    const memberships = await this.groupMembersRepository.find({
+      where: { userId, membershipStatus: MembershipStatus.ACTIVE },
+      relations: { group: true },
+      order: { createdAt: 'DESC' },
     });
+
+    return memberships
+      .map((membership) => membership.group)
+      .filter((group) => group && group.status === GroupStatus.ACTIVE);
   }
 
   // =====================================================
@@ -194,7 +203,7 @@ export class GroupsService {
       );
     }
 
-    return group;
+    return { id: group.id, name: group.name, description: group.description, imageUrl: group.imageUrl, themeColor: group.themeColor, joinMode: group.joinMode, maximumMembers: group.maximumMembers };
   }
 
   // =====================================================
@@ -209,7 +218,7 @@ export class GroupsService {
   ) {
     const group = await this.findOne(id);
 
-    this.validateOwner(group, userId);
+    await this.validateOwner(group, userId);
 
     const {
       invitationExpiresAt,
@@ -238,7 +247,7 @@ export class GroupsService {
   ) {
     const group = await this.findOne(id);
 
-    this.validateOwner(group, userId);
+    await this.validateOwner(group, userId);
 
     group.status = GroupStatus.ARCHIVED;
     group.invitationEnabled = false;
@@ -257,7 +266,7 @@ export class GroupsService {
   ) {
     const group = await this.findOne(id);
 
-    this.validateOwner(group, userId);
+    await this.validateOwner(group, userId);
 
     group.status = GroupStatus.DELETED;
     group.invitationEnabled = false;
@@ -279,19 +288,19 @@ export class GroupsService {
   ) {
     const group = await this.findOne(id);
 
-    this.validateOwner(group, userId);
+    await this.validateOwner(group, userId);
 
     const invitationCode =
       randomUUID().replace(/-/g, '');
 
     const frontendUrl =
       this.configService.get<string>('FRONTEND_URL') ||
-      'http://localhost:3001';
+      'http://localhost:5173';
 
     group.invitationCode = invitationCode;
 
     group.invitationUrl =
-      `${frontendUrl}/groups/join/${invitationCode}`;
+      `${frontendUrl.replace(/\/+$/, '')}/groups/join/${invitationCode}`;
 
     group.invitationEnabled = true;
 
@@ -302,11 +311,86 @@ export class GroupsService {
   // VALIDAR PROPIETARIO DEL GRUPO
   // =====================================================
 
-  private validateOwner(
+  async assertCanView(id: string, userId: string) {
+    const group = await this.findOne(id);
+    const actor = await this.usersService.findOne(userId);
+    if (actor.role === UserRole.ADMIN || group.ownerId === userId) return group;
+    if (group.visibility === GroupVisibility.PUBLIC) return {
+      id: group.id, name: group.name, description: group.description, imageUrl: group.imageUrl, themeColor: group.themeColor,
+      visibility: group.visibility, status: group.status, createdAt: group.createdAt,
+    };
+    const member = await this.groupMembersRepository.findOne({
+      where: { groupId: id, userId, membershipStatus: MembershipStatus.ACTIVE },
+    });
+    if (!member) throw new ForbiddenException('No perteneces a este grupo.');
+    return group;
+  }
+
+  async updateImage(id: string, actorId: string, file: Express.Multer.File | undefined) {
+    const group = await this.findOne(id);
+    await this.validateOwner(group, actorId);
+    if (group.status !== GroupStatus.ACTIVE) throw new BadRequestException('El grupo no está activo.');
+    const uploaded = await this.cloudinaryService.uploadImage(file, IMAGE_FOLDERS.GROUPS);
+    let previous: string | null = null;
+    try {
+      const updated = await this.groupsRepository.manager.transaction(async manager => {
+        const repo = manager.getRepository(Group);
+        const current = await repo.findOne({ where: { id }, lock: { mode: 'pessimistic_write' } });
+        if (!current || current.status !== GroupStatus.ACTIVE) throw new BadRequestException('Grupo no disponible.');
+        previous = current.imagePublicId;
+        current.imageUrl = uploaded.url;
+        current.imagePublicId = uploaded.publicId;
+        return repo.save(current);
+      });
+      await this.cleanupImage(previous);
+      return updated;
+    } catch (error) {
+      await this.cleanupImage(uploaded.publicId);
+      throw error;
+    }
+  }
+
+  async removeImage(id: string, actorId: string) {
+    const group = await this.findOne(id);
+    await this.validateOwner(group, actorId);
+    const previous = group.imagePublicId;
+    group.imageUrl = null;
+    group.imagePublicId = null;
+    const updated = await this.groupsRepository.save(group);
+    await this.cleanupImage(previous);
+    return updated;
+  }
+
+  async invitationQr(id: string, actorId: string) {
+    const group = await this.findOne(id);
+    await this.validateOwner(group, actorId);
+    if (group.status !== GroupStatus.ACTIVE || !group.invitationEnabled ||
+        (group.invitationExpiresAt && group.invitationExpiresAt < new Date())) {
+      throw new BadRequestException('La invitación no está disponible.');
+    }
+    return {
+      groupId: group.id,
+      invitationUrl: group.invitationUrl,
+      qrDataUrl: await QRCode.toDataURL(group.invitationUrl, {
+        errorCorrectionLevel: 'H', margin: 2, width: 384,
+      }),
+    };
+  }
+
+  private async cleanupImage(publicId: string | null) {
+    if (!publicId) return;
+    try { await this.cloudinaryService.deleteImage(publicId); }
+    catch { this.logger.warn(`Limpieza pendiente en Cloudinary: ${publicId}`); }
+  }
+
+
+  private async validateOwner(
     group: Group,
     userId: string,
   ) {
-    if (group.ownerId !== userId) {
+    const actor = await this.usersService.findOne(userId);
+    if (actor.status !== 'active') throw new ForbiddenException('Usuario inactivo.');
+    if (group.ownerId !== userId && actor.role !== UserRole.ADMIN) {
       throw new ForbiddenException(
         'No tienes permiso para realizar esta acción en este grupo',
       );

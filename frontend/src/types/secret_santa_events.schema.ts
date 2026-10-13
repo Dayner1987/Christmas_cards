@@ -10,6 +10,7 @@ export interface SecretSantaEvent {
   creatorId: string;
   name: string;
   description: string | null;
+  imageUrl?: string | null;
   budget: number | null;
   currencyCode: string;
   drawDate: string | null;

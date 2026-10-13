@@ -1,4 +1,5 @@
 import { Module,} from '@nestjs/common';
+import { UsersModule } from '../users/users.module';
 import { TypeOrmModule, } from '@nestjs/typeorm';
 import { SecretSantaEventsService, } from './secret_santa_events.service';
 import { SecretSantaEventsController, } from './secret_santa_events.controller';
@@ -32,6 +33,7 @@ import {
     ]),
 
     AuthModule,
+    UsersModule,
   ],
 
   controllers: [

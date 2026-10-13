@@ -20,6 +20,7 @@ import type {
 } from '../../../types/wishlist_items.schema';
 
 import WishlistItemFormModal from './WishlistItemFormModal';
+import { uploadWishlistItemImage } from '../../../api/wishlist_items';
 import {
   ErrorNotice,
   formatPrice,
@@ -109,6 +110,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
   const saveItem = async (
     data: CreateWishlistItem,
     isReceived: boolean,
+    imageFile?: File,
   ) => {
     if (busy || archived) return;
 
@@ -117,10 +119,12 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
     setNotice('');
 
     try {
-      if (editing) {
-        await editItem(editing.id, { ...data, isReceived });
-      } else {
-        await addItem(data);
+      const saved = editing
+        ? await editItem(editing.id, { ...data, isReceived })
+        : await addItem(data);
+      if (imageFile) {
+        await uploadWishlistItemImage(wishlist.id, saved.id, imageFile);
+        await fetchItems();
       }
 
       setFormOpen(false);
@@ -179,7 +183,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
         type="button"
         disabled={busy}
         onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-40"
+        className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"
       >
         <ArrowLeft className="h-4 w-4" />
         Volver a las listas
@@ -187,7 +191,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
 
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-violet-600">
+          <p className="text-sm font-semibold text-red-600">
             Lista de deseos
           </p>
           <h1 className="mt-1 break-words text-3xl font-extrabold text-slate-900">
@@ -207,7 +211,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
               setError('');
               setFormOpen(true);
             }}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
             Agregar producto
@@ -241,10 +245,10 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-2xl border border-violet-100 bg-violet-50/40 p-3 sm:p-5"
+            className="rounded-2xl border border-red-100 bg-red-50/40 p-3 sm:p-5"
           >
             <p className="text-xs text-slate-500 sm:text-sm">{stat.label}</p>
-            <p className="mt-1 text-2xl font-bold text-violet-700">
+            <p className="mt-1 text-2xl font-bold text-red-700">
               {stat.value}
             </p>
           </div>
@@ -260,7 +264,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Buscar productos..."
-            className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+            className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
           />
         </div>
 
@@ -268,7 +272,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
           aria-label="Filtrar productos por estado"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-violet-100"
+          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-red-100"
         >
           <option value="all">Todos los productos</option>
           <option value="pending">Pendientes</option>
@@ -280,22 +284,22 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
           disabled={busy}
           onClick={() => void refresh()}
           aria-label="Actualizar productos"
-          className="flex items-center justify-center rounded-xl border border-violet-200 p-3 text-violet-600 hover:bg-violet-50 disabled:opacity-40"
+          className="flex items-center justify-center rounded-xl border border-red-200 p-3 text-red-600 hover:bg-red-50 disabled:opacity-40"
         >
           <RefreshCw className={`h-5 w-5 ${busy ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {busy && (
-        <p role="status" className="flex items-center gap-2 text-sm text-violet-600">
+        <p role="status" className="flex items-center gap-2 text-sm text-red-600">
           <Loader2 className="h-4 w-4 animate-spin" />
           Procesando...
         </p>
       )}
 
       {!busy && filteredItems.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-violet-200 bg-violet-50/40 p-10 text-center">
-          <Gift className="mx-auto h-10 w-10 text-violet-400" />
+        <div className="rounded-3xl border border-dashed border-red-200 bg-red-50/40 p-10 text-center">
+          <Gift className="mx-auto h-10 w-10 text-red-400" />
           <h2 className="mt-4 font-bold text-slate-800">
             No hay productos para mostrar
           </h2>
@@ -313,9 +317,9 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
             return (
               <article
                 key={item.id}
-                className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-sm"
+                className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm"
               >
-                <div className="relative aspect-[4/3] bg-violet-50/50 p-4">
+                <div className="relative aspect-[4/3] bg-red-50/50 p-4">
                   <ProductImage src={item.imageUrl} alt={item.name} />
 
                   <span
@@ -332,7 +336,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
                 </div>
 
                 <div className="flex flex-1 flex-col p-5">
-                  <span className="text-xs font-semibold text-violet-600">
+                  <span className="text-xs font-semibold text-red-600">
                     {item.isReceived ? 'Recibido' : 'Pendiente'}
                   </span>
 
@@ -345,7 +349,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
                   </p>
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-bold text-violet-700">
+                    <span className="font-bold text-red-700">
                       {formatPrice(item.estimatedPrice, item.currencyCode)}
                     </span>
                     <span className="text-xs text-slate-500">
@@ -358,7 +362,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
                       href={productLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-violet-600 hover:underline"
+                      className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:underline"
                     >
                       <ExternalLink className="h-4 w-4" />
                       Ver producto
@@ -377,7 +381,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
                           setError('');
                           setFormOpen(true);
                         }}
-                        className="rounded-xl border border-violet-200 p-3 text-violet-600 hover:bg-violet-50 disabled:opacity-40"
+                        className="rounded-xl border border-red-200 p-3 text-red-600 hover:bg-red-50 disabled:opacity-40"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -400,7 +404,7 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
                         type="button"
                         disabled={busy}
                         onClick={() => void toggleReceived(item)}
-                        className="ml-auto inline-flex items-center gap-2 rounded-xl bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-40"
+                        className="ml-auto inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-40"
                       >
                         <Check className="h-4 w-4" />
                         {item.isReceived ? 'Marcar pendiente' : 'Marcar recibido'}

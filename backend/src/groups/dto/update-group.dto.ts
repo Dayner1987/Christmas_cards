@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  Matches,
   Min,
 } from 'class-validator';
 
@@ -26,9 +27,8 @@ export class UpdateGroupDto {
   description?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  imageUrl?: string;
+  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'themeColor debe tener el formato #RRGGBB' })
+  themeColor?: string;
 
   @IsOptional()
   @IsEnum(GroupVisibility)

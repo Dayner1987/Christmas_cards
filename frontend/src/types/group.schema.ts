@@ -14,6 +14,8 @@ export interface Group {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  themeColor: string;
+  imagePublicId?: string | null;
   invitationCode: string | null;
   invitationUrl: string | null;
   visibility: GroupVisibility;
@@ -29,7 +31,7 @@ export interface Group {
 export interface CreateGroup {
   name: string;
   description?: string;
-  imageUrl?: string;
+  themeColor?: string;
   visibility?: GroupVisibility;
   joinMode?: GroupJoinMode;
   maximumMembers?: number;
@@ -40,7 +42,7 @@ export interface CreateGroup {
 export interface UpdateGroup {
   name?: string;
   description?: string;
-  imageUrl?: string;
+  themeColor?: string;
   visibility?: GroupVisibility;
   joinMode?: GroupJoinMode;
   maximumMembers?: number;

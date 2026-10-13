@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { authStorage } from '../config/auth.storage';
+import { api, imageForm } from './http';
 
 import type {
   Card,
@@ -7,24 +6,7 @@ import type {
   UpdateCard,
 } from '../types/cards.schema';
 
-const API_URL = 'http://localhost:3000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export const createCard = async (
   data: CreateCard,
@@ -90,3 +72,13 @@ export const deleteCard = async (
 ): Promise<void> => {
   await api.delete(`/cards/${id}`);
 };
+export type CardImageSlot = 'front' | 'background' | 'preview';
+export async function uploadCardImage(id: string, slot: CardImageSlot, file: File): Promise<Card> {
+  return (await api.post<Card>(`/cards/${id}/images/${slot}`, imageForm(file))).data;
+}
+export async function deleteCardImage(id: string, slot: CardImageSlot): Promise<Card> {
+  return (await api.delete<Card>(`/cards/${id}/images/${slot}`)).data;
+}
+export async function getAdminCards(): Promise<Card[]> {
+  return (await api.get<Card[]>('/cards/admin')).data;
+}

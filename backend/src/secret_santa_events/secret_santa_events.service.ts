@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -13,6 +14,11 @@ import {
   In,
   Repository,
 } from 'typeorm';
+
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { IMAGE_FOLDERS } from '../cloudinary/cloudinary.constants';
+import { UsersService } from '../users/users.service';
+import { UserRole } from '../users/entities/user.entity';
 
 import {
   CreateSecretSantaEventDto,
@@ -40,6 +46,7 @@ import {
 
 @Injectable()
 export class SecretSantaEventsService {
+  private readonly logger = new Logger(SecretSantaEventsService.name);
   constructor(
     @InjectRepository(SecretSantaEvent)
     private readonly eventsRepository:
@@ -52,6 +59,9 @@ export class SecretSantaEventsService {
     @InjectRepository(GroupMember)
     private readonly groupMembersRepository:
       Repository<GroupMember>,
+
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly usersService: UsersService,
   ) {}
 
   // =====================================================
@@ -359,6 +369,46 @@ export class SecretSantaEventsService {
   // BUSCAR EVENTO
   // =====================================================
 
+  async uploadImage(eventId: string, actorId: string, file: Express.Multer.File | undefined) {
+    const event = await this.findEventById(eventId);
+    await this.validateCanManageGroup(event.groupId, actorId);
+    const uploaded = await this.cloudinaryService.uploadImage(file, IMAGE_FOLDERS.EVENTS);
+    let previous: string | null = null;
+    try {
+      const updated = await this.eventsRepository.manager.transaction(async manager => {
+        const repo = manager.getRepository(SecretSantaEvent);
+        const current = await repo.findOne({ where: { id: eventId }, lock: { mode: 'pessimistic_write' } });
+        if (!current) throw new NotFoundException('Evento no encontrado.');
+        previous = current.imagePublicId;
+        current.imageUrl = uploaded.url;
+        current.imagePublicId = uploaded.publicId;
+        return repo.save(current);
+      });
+      await this.cleanupImage(previous);
+      return updated;
+    } catch (error) {
+      await this.cleanupImage(uploaded.publicId);
+      throw error;
+    }
+  }
+
+  async deleteImage(eventId: string, actorId: string) {
+    const event = await this.findEventById(eventId);
+    await this.validateCanManageGroup(event.groupId, actorId);
+    const previous = event.imagePublicId;
+    event.imageUrl = null;
+    event.imagePublicId = null;
+    const updated = await this.eventsRepository.save(event);
+    await this.cleanupImage(previous);
+    return updated;
+  }
+
+  private async cleanupImage(publicId: string | null) {
+    if (!publicId) return;
+    try { await this.cloudinaryService.deleteImage(publicId); }
+    catch { this.logger.warn(`Limpieza pendiente en Cloudinary: ${publicId}`); }
+  }
+
   private async findEventById(
     id: string,
   ) {
@@ -399,9 +449,10 @@ export class SecretSantaEventsService {
       );
     }
 
-    // El dueño siempre puede acceder.
-
-    if (group.ownerId === userId) {
+    // El dueño y el administrador global pueden acceder.
+    const actor = await this.usersService.findOne(userId);
+    if (actor.status !== 'active') throw new ForbiddenException('Cuenta inactiva.');
+    if (group.ownerId === userId || actor.role === UserRole.ADMIN) {
       return group;
     }
 
@@ -453,9 +504,10 @@ export class SecretSantaEventsService {
       );
     }
 
-    // El dueño registrado en groups siempre administra.
-
-    if (group.ownerId === userId) {
+    // El dueño y el administrador global pueden administrar.
+    const actor = await this.usersService.findOne(userId);
+    if (actor.status !== 'active') throw new ForbiddenException('Cuenta inactiva.');
+    if (group.ownerId === userId || actor.role === UserRole.ADMIN) {
       return group;
     }
 

@@ -1,3 +1,6 @@
+
+import type { Card } from './cards.schema';
+
 export type DeliveryChannel =
   | 'application'
   | 'whatsapp'
@@ -30,6 +33,9 @@ export interface UserCard {
   readAt: string | null;
   createdAt: string;
   updatedAt: string;
+  
+card?: Card | null;
+
 }
 
 export interface CreateUserCard {

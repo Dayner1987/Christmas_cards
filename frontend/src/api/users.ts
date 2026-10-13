@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-import { authStorage } from '../config/auth.storage';
+import { api } from './http';
 
 import type {
   ChangePassword,
@@ -9,29 +7,10 @@ import type {
   User,
 } from '../types/user.schema';
 
-const API_URL = 'http://localhost:3000';
+import { authStorage } from '../config/auth.storage';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-
-const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-];
-
-const api = axios.create({
-  baseURL: API_URL,
-});
-
-api.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /**
  * Actualiza la sesión únicamente si la respuesta

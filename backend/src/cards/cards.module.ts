@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { UsersModule } from '../users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CardsService } from './cards.service';
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
     ]),
 
     AuthModule,
+    UsersModule,
   ],
 
   controllers: [

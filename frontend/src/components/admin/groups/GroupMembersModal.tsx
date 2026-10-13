@@ -1,380 +1,73 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { FormEvent } from 'react';
-import { LoaderCircle, Plus, Save, Search, ShieldCheck, Trash2 } from 'lucide-react';
-
-import {
-  addGroupMember, deleteGroupMember, getGroupMembers, updateGroupMember,
-} from '../../../api/group-members';
+// src/components/admin/groups/GroupMembersModal.tsx
+import { useCallback, useEffect, useState } from 'react';
+import { Check, Plus, ShieldCheck, Trash2, Users, UserRoundPlus } from 'lucide-react';
+import { addGroupMember, approveGroupMember, approveGuestMember, deleteGroupMember, getGroupMembers, removeGuestMember, updateGroupMember } from '../../../api/group-members';
+import { addGuestToGroup } from '../../../api/groups';
 import { getUsers } from '../../../api/users';
-
+import { getApiError } from '../../../api/http';
+import { api } from '../../../api/http';
 import type { Group } from '../../../types/group.schema';
 import type { User } from '../../../types/user.schema';
-import type {
-  GroupMember, GroupMemberRole, MembershipStatus, UpdateGroupMember,
-} from '../../../types/group_members.schema';
+import type { GroupMember } from '../../../types/group_members.schema';
+import GroupDialog from './GroupDialog';
 
-import GroupDialog, { groupError } from './GroupDialog';
-
-const MEMBER_STATUS: Record<MembershipStatus, string> = {
-  pending: 'Pendiente',
-  active: 'Activo',
-  rejected: 'Rechazado',
-  left: 'Salió del grupo',
-  removed: 'Retirado',
-};
-
-interface MemberRowProps {
-  member: GroupMember;
-  user?: User;
-  owner: boolean;
-  disabled: boolean;
-  onSave: (userId: string, data: UpdateGroupMember) => Promise<void>;
-  onRemove: (userId: string) => Promise<void>;
-}
-
-function MemberRow({
-  member, user, owner, disabled, onSave, onRemove,
-}: MemberRowProps) {
-  const [role, setRole] = useState(member.role);
-  const [status, setStatus] = useState(member.membershipStatus);
-  const [confirmRemove, setConfirmRemove] = useState(false);
-
-  const name = user
-    ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username
-    : `Usuario ${member.userId}`;
-
-  const changed = role !== member.role || status !== member.membershipStatus;
-
-  return (
-    <article className="rounded-2xl border border-purple-100 bg-white p-4">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="break-words font-bold text-purple-950">{name}</p>
-          <p className="mt-1 break-all text-xs text-slate-500">{user?.email || member.userId}</p>
-        </div>
-        {owner && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-purple-100 px-2 py-1 text-xs font-bold text-purple-700">
-            <ShieldCheck size={13} /> Propietario
-          </span>
-        )}
-      </div>
-
-      {owner ? (
-        <p className="text-sm text-slate-500">Estado: {MEMBER_STATUS[member.membershipStatus]}</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <label className="text-xs font-semibold text-slate-500">
-            Rol
-            <select
-              aria-label={`Rol de ${name}`}
-              disabled={disabled}
-              value={role}
-              onChange={event => setRole(event.target.value as GroupMemberRole)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-purple-200 bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-purple-300 disabled:opacity-50"
-            >
-              <option value="admin">Administrador</option>
-              <option value="member">Miembro</option>
-            </select>
-          </label>
-
-          <label className="text-xs font-semibold text-slate-500">
-            Estado
-            <select
-              aria-label={`Estado de ${name}`}
-              disabled={disabled}
-              value={status}
-              onChange={event => setStatus(event.target.value as MembershipStatus)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-purple-200 bg-white px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-purple-300 disabled:opacity-50"
-            >
-              {Object.entries(MEMBER_STATUS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-      )}
-
-      {!owner && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={disabled || !changed}
-            onClick={() => void onSave(member.userId, { role, membershipStatus: status })}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-purple-700 px-3 text-sm font-bold text-white hover:bg-purple-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
-          >
-            <Save size={16} /> Guardar
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => setConfirmRemove(true)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-50 px-3 text-sm font-bold text-rose-700 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-40"
-          >
-            <Trash2 size={16} /> Quitar
-          </button>
-        </div>
-      )}
-
-      {confirmRemove && (
-        <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3">
-          <p className="text-sm text-rose-800">¿Confirmas que quieres quitar a esta persona del grupo?</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => setConfirmRemove(false)}
-              className="min-h-11 rounded-lg bg-white px-3 text-sm font-bold text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => void onRemove(member.userId)}
-              className="min-h-11 rounded-lg bg-rose-600 px-3 text-sm font-bold text-white hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-40"
-            >
-              Confirmar retiro
-            </button>
-          </div>
-        </div>
-      )}
-    </article>
-  );
-}
-
-export default function GroupMembersModal({
-  group, onClose,
-}: {
-  group: Group;
-  onClose: () => void;
-}) {
+type Pending = { memberId: string; guestName: string | null; isGuest: boolean; userId: string | null; username: string | null };
+export default function GroupMembersModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [pending, setPending] = useState<Pending[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [guestToken, setGuestToken] = useState('');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [warning, setWarning] = useState('');
   const [notice, setNotice] = useState('');
-  const [ready, setReady] = useState(false);
-  const [retry, setRetry] = useState(0);
-  const [query, setQuery] = useState('');
-  const [userId, setUserId] = useState('');
-  const [newRole, setNewRole] = useState<'admin' | 'member'>('member');
-
-  const lock = useRef(false);
-  const archived = group.status === 'archived';
-
+  const refresh = useCallback(async () => {
+    const [m, p, u] = await Promise.all([
+      getGroupMembers(group.id),
+      api.get<Pending[]>(`/groups/${group.id}/members/pending`).then(response => response.data),
+      getUsers(),
+    ]);
+    setMembers(m); setPending(p); setUsers(u);
+  }, [group.id]);
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setReady(false);
-    setError('');
-    setWarning('');
-
-    void Promise.allSettled([
-      getGroupMembers(group.id),
-      getUsers(),
-    ]).then(([memberResult, userResult]) => {
-      if (!active) return;
-
-      if (memberResult.status === 'fulfilled') {
-        setMembers(memberResult.value);
-        setReady(true);
-      } else {
-        setError(groupError(memberResult.reason));
-      }
-
-      if (userResult.status === 'fulfilled') {
-        setUsers(userResult.value);
-      } else {
-        setWarning('No se pudo cargar el directorio de usuarios. Puedes consultar los miembros por su ID.');
-      }
-
-      setLoading(false);
-    });
-
+    void refresh().catch(cause => { if (active) setError(getApiError(cause)); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [group.id, retry]);
-
-  const userMap = useMemo(
-    () => new Map(users.map(user => [user.id, user])),
-    [users],
-  );
-
-  const availableUsers = useMemo(
-    () => users.filter(user =>
-      user.id !== group.ownerId &&
-      user.status === 'active' &&
-      !members.some(member => member.userId === user.id),
-    ),
-    [users, members, group.ownerId],
-  );
-
-  const visibleMembers = members.filter(member => {
-    const user = userMap.get(member.userId);
-    return [
-      member.userId, user?.username, user?.email, user?.firstName, user?.lastName,
-    ].filter(Boolean).join(' ').toLowerCase().includes(query.trim().toLowerCase());
-  });
-
-  const mutate = useCallback(async (
-    operation: () => Promise<void>,
-    message: string,
-  ) => {
-    if (lock.current) return;
-
-    lock.current = true;
-    setSaving(true);
-    setError('');
-    setNotice('');
-
-    try {
-      await operation();
-      setNotice(message);
-    } catch (cause) {
-      setError(groupError(cause));
-    } finally {
-      lock.current = false;
-      setSaving(false);
-    }
-  }, []);
-
-  const add = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!userId || archived || !ready) return;
-
-    await mutate(async () => {
-      const created = await addGroupMember(group.id, { userId, role: newRole });
-      setMembers(current => [...current.filter(member => member.userId !== created.userId), created]);
-      setUserId('');
-      setNewRole('member');
-    }, 'Miembro agregado correctamente.');
+  }, [refresh]);
+  const mutate = async (action: () => Promise<unknown>, message: string) => {
+    if (busy) return;
+    setBusy(true); setError(''); setNotice('');
+    try { await action(); await refresh(); setNotice(message); }
+    catch (cause) { setError(getApiError(cause)); }
+    finally { setBusy(false); }
   };
-
-  const save = async (id: string, data: UpdateGroupMember) => {
-    if (archived || id === group.ownerId) return;
-
-    await mutate(async () => {
-      const updated = await updateGroupMember(group.id, id, data);
-      setMembers(current => current.map(member => member.userId === id ? updated : member));
-    }, 'Miembro actualizado correctamente.');
-  };
-
-  const remove = async (id: string) => {
-    if (archived || id === group.ownerId) return;
-
-    await mutate(async () => {
-      await deleteGroupMember(group.id, id);
-      setMembers(current => current.filter(member => member.userId !== id));
-    }, 'Miembro retirado del grupo.');
-  };
-
-  return (
-    <GroupDialog title={`Miembros · ${group.name}`} busy={saving} onClose={onClose}>
-      {archived && (
-        <p className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
-          El grupo está archivado. Sus miembros se muestran en modo consulta.
-        </p>
-      )}
-
-      {!archived && (
-        <form onSubmit={add} className="mb-5 rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
-          <h3 className="mb-3 font-bold text-purple-950">Agregar miembro</h3>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <select
-              aria-label="Usuario que se agregará"
-              required
-              disabled={loading || saving || !ready}
-              value={userId}
-              onChange={event => setUserId(event.target.value)}
-              className="min-h-11 min-w-0 flex-1 rounded-xl border border-purple-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-purple-300 disabled:opacity-50"
-            >
-              <option value="">Seleccionar usuario</option>
-              {availableUsers.map(user => (
-                <option key={user.id} value={user.id}>{user.username} · {user.email}</option>
-              ))}
-            </select>
-            <select
-              aria-label="Rol del nuevo miembro"
-              value={newRole}
-              disabled={loading || saving || !ready}
-              onChange={event => setNewRole(event.target.value as 'admin' | 'member')}
-              className="min-h-11 rounded-xl border border-purple-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-purple-300 disabled:opacity-50"
-            >
-              <option value="member">Miembro</option>
-              <option value="admin">Administrador</option>
-            </select>
-            <button
-              type="submit"
-              disabled={loading || saving || !ready || !userId}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-purple-700 px-4 text-sm font-bold text-white hover:bg-purple-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
-            >
-              <Plus size={17} /> Agregar
-            </button>
-          </div>
-          <p className="mt-3 text-xs leading-5 text-slate-500">
-            Los usuarios con una membresía existente se administran en el listado inferior.
-          </p>
-        </form>
-      )}
-
-      {warning && <p className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{warning}</p>}
-      {error && <p role="alert" className="mb-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
-      {notice && <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
-
-      <label className="mb-4 flex items-center gap-2 rounded-xl border border-purple-200 px-3 text-purple-500 focus-within:ring-2 focus-within:ring-purple-300">
-        <Search size={18} aria-hidden="true" />
-        <input
-          aria-label="Buscar miembros"
-          placeholder="Buscar miembro…"
-          value={query}
-          onChange={event => setQuery(event.target.value)}
-          className="min-h-11 w-full min-w-0 bg-transparent text-sm text-slate-700 outline-none"
-        />
-      </label>
-
-      {loading ? (
-        <p role="status" className="flex items-center gap-2 py-6 text-sm text-purple-700">
-          <LoaderCircle size={18} className="motion-safe:animate-spin" /> Cargando miembros…
-        </p>
-      ) : !ready ? (
-        <button
-          type="button"
-          onClick={() => setRetry(value => value + 1)}
-          className="min-h-11 rounded-xl bg-purple-100 px-4 text-sm font-bold text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
-        >
-          Reintentar
-        </button>
-      ) : (
-        <div className="space-y-3">
-          {visibleMembers.map(member => (
-            <MemberRow
-              key={`${member.id}:${member.updatedAt}:${member.role}:${member.membershipStatus}`}
-              member={member}
-              user={userMap.get(member.userId)}
-              owner={member.userId === group.ownerId || member.role === 'owner'}
-              disabled={saving || archived}
-              onSave={save}
-              onRemove={remove}
-            />
-          ))}
-          {!visibleMembers.length && (
-            <p className="py-8 text-center text-sm text-slate-500">No hay miembros para mostrar.</p>
-          )}
-        </div>
-      )}
-
-      <footer className="mt-5 flex items-center justify-between gap-3 border-t border-purple-100 pt-4">
-        <p className="text-xs text-slate-500">{ready ? `${members.length} membresías registradas` : 'Listado no disponible'}</p>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={onClose}
-          className="min-h-11 rounded-xl border border-purple-200 px-5 text-sm font-bold text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
-        >
-          Cerrar
-        </button>
-      </footer>
-    </GroupDialog>
-  );
+  const nameOf = (member: GroupMember): string => member.isGuest
+    ? (member.guestName || 'Invitado')
+    : ([member.user?.firstName, member.user?.lastName].filter(Boolean).join(' ') || member.user?.username || 'Usuario registrado');
+  return <GroupDialog busy={busy} title={`Participantes · ${group.name}`} onClose={onClose}>
+    <div className="space-y-5">
+      {loading && <p className="text-sm text-slate-500">Cargando miembros...</p>}
+      {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      {notice && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
+      {guestToken && <section className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-sm font-bold text-amber-950">Token privado del invitado</p><p className="mt-2 break-all font-mono text-xs">{guestToken}</p><p className="mt-2 text-xs text-amber-800">Cópialo y compártelo solamente con el invitado. No será mostrado de nuevo.</p><button onClick={() => void navigator.clipboard.writeText(guestToken)} className="mt-2 rounded-lg bg-white px-3 py-2 text-sm font-bold">Copiar token</button></section>}
+      {group.status === 'active' && <>
+        <section className="rounded-2xl bg-red-50 p-4"><h3 className="mb-3 flex items-center gap-2 font-black text-red-900"><UserRoundPlus size={18}/> Agregar invitado sin cuenta</h3><div className="flex flex-col gap-2 sm:flex-row"><input value={guestName} onChange={e => setGuestName(e.target.value)} maxLength={80} placeholder="Nombre del invitado" className="min-h-11 min-w-0 flex-1 rounded-lg border border-red-200 px-3 text-sm"/><button disabled={busy || guestName.trim().length<2} onClick={() => void mutate(async () => { const g=await addGuestToGroup(group.id, guestName.trim()); setGuestToken(g.guestToken); setGuestName(''); }, 'Invitado agregado.')} className="min-h-11 rounded-lg bg-red-700 px-4 text-sm font-bold text-white disabled:opacity-50"><Plus size={16} className="inline"/> Añadir</button></div></section>
+        <section><h3 className="mb-2 font-black text-red-950">Agregar usuario registrado</h3><div className="flex flex-col gap-2 sm:flex-row"><select value={selectedUserId} onChange={e=>setSelectedUserId(e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-lg border border-red-200 bg-white px-3 text-sm"><option value="">Selecciona un usuario</option>{users.filter(user => !members.some(m=>m.user?.id===user.id)).map(user=><option key={user.id} value={user.id}>{user.username} — {user.email}</option>)}</select><button disabled={busy || !selectedUserId} onClick={() => void mutate(async()=>{ await addGroupMember(group.id,{userId:selectedUserId,role:'member'});setSelectedUserId(''); }, 'Usuario agregado.')} className="min-h-11 rounded-lg border border-red-200 px-4 text-sm font-bold text-red-800 disabled:opacity-50">Agregar</button></div></section>
+      </>}
+      {pending.length>0 && <section className="space-y-2"><h3 className="font-black text-amber-900">Solicitudes pendientes ({pending.length})</h3>{pending.map(item=><div key={item.memberId} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3"><span className="text-sm font-bold">{item.guestName || item.username || 'Usuario'}</span><button disabled={busy} onClick={() => void mutate(() => item.isGuest ? approveGuestMember(group.id,item.memberId) : approveGroupMember(group.id,item.userId!), 'Solicitud aprobada.')} className="rounded-lg bg-amber-900 px-3 py-2 text-xs font-bold text-white"><Check size={14} className="inline"/> Aprobar</button></div>)}</section>}
+      <section className="space-y-2"><h3 className="flex items-center gap-2 font-black text-red-950"><Users size={19}/> Miembros activos ({members.length})</h3>{members.map(member => {
+        const uid=member.user?.id;
+        const owner=uid===group.ownerId || member.role==='owner';
+        return <article key={member.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-red-100 p-3">
+          {member.isGuest && member.guestAvatarUrl ? <img alt="" src={member.guestAvatarUrl} className="h-10 w-10 rounded-full object-cover"/> : <span className="grid h-10 w-10 place-items-center rounded-full bg-red-100 text-red-700"><Users size={18}/></span>}
+          <div className="min-w-0 flex-1"><p className="break-words text-sm font-black">{nameOf(member)}</p><p className="text-xs text-slate-500">{member.isGuest ? 'Invitado sin cuenta' : owner ? 'Propietario' : member.role==='admin' ? 'Moderador' : 'Miembro'}</p></div>
+          {!owner && group.status==='active' && <div className="flex items-center gap-2">{uid && <select disabled={busy} value={member.role} onChange={e => void mutate(()=>updateGroupMember(group.id,uid,{role:e.target.value as 'member'|'admin'}),'Rol actualizado.')} className="rounded-lg border border-red-200 bg-white px-2 py-2 text-xs"><option value="member">Miembro</option><option value="admin">Admin</option></select>}
+            <button disabled={busy} aria-label={`Quitar a ${nameOf(member)}`} onClick={() => { if (window.confirm(`¿Quitar a ${nameOf(member)} del grupo?`)) void mutate(() => member.isGuest ? removeGuestMember(group.id,member.id) : deleteGroupMember(group.id,uid!), 'Miembro retirado.'); }} className="rounded-lg p-2 text-red-700 hover:bg-red-50"><Trash2 size={17}/></button></div>}
+          {owner && <ShieldCheck size={20} className="text-red-700"/>}
+        </article>;
+      })}</section>
+    </div>
+  </GroupDialog>;
 }

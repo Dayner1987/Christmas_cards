@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { authStorage } from '../config/auth.storage';
+import { api, imageForm } from './http';
 
 import type {
   CreateSecretSantaEvent,
@@ -7,24 +6,7 @@ import type {
   UpdateSecretSantaEvent,
 } from '../types/secret_santa_events.schema';
 
-const API_URL = 'http://localhost:3000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export const createSecretSantaEvent = async (
   data: CreateSecretSantaEvent,
@@ -98,3 +80,6 @@ export const completeSecretSantaEvent = async (
 
   return response.data;
 };
+export async function uploadEventImage(id: string, file: File): Promise<SecretSantaEvent> {
+  return (await api.post<SecretSantaEvent>(`/secret-santa-events/${id}/image`, imageForm(file))).data;
+}

@@ -23,7 +23,6 @@ export interface CreateWishlistItem {
   name: string;
   description?: string;
   productUrl?: string;
-  imageUrl?: string;
   estimatedPrice?: string;
   currencyCode?: string;
   priority?: WishlistItemPriority;
@@ -34,7 +33,6 @@ export interface UpdateWishlistItem {
   name?: string;
   description?: string;
   productUrl?: string;
-  imageUrl?: string;
   estimatedPrice?: string;
   currencyCode?: string;
   priority?: WishlistItemPriority;

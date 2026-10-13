@@ -41,6 +41,7 @@ import {
 import {
   SecretSantaAssignmentsModule,
 } from './secret_santa_assignments/secret_santa_assignments.module';
+import { GroupSocialModule } from './group_social/group_social.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import {
     UserCardsModule,
     SecretSantaEventsModule,
     SecretSantaAssignmentsModule,
+    GroupSocialModule,
   ],
 })
 export class AppModule {}

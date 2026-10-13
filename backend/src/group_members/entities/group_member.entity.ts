@@ -1,5 +1,6 @@
 import {
   Column,
+  Index,
   CreateDateColumn,
   Entity,
   JoinColumn,
@@ -47,8 +48,25 @@ export class GroupMember {
 
   @Column('uuid', {
     name: 'id_users',
+    nullable: true,
   })
-  userId: string;
+  userId: string | null;
+
+  @Column({ name: 'guest_name', type: 'varchar', length: 80, nullable: true })
+  guestName: string | null;
+
+  @Index('uk_group_members_guest_access_hash', { unique: true })
+  @Column({ name: 'guest_access_hash', type: 'varchar', length: 64, nullable: true, select: false })
+  guestAccessHash: string | null;
+
+  @Column({ name: 'guest_avatar_url', type: 'varchar', length: 1000, nullable: true })
+  guestAvatarUrl: string | null;
+
+  @Column({ name: 'guest_avatar_public_id', type: 'varchar', length: 255, nullable: true })
+  guestAvatarPublicId: string | null;
+
+  @Column({ name: 'guest_wishlist', type: 'jsonb', default: () => "'[]'::jsonb" })
+  guestWishlist: Array<{name: string; productUrl?: string; note?: string}>;
 
   @Column({
     type: 'varchar',
@@ -102,11 +120,12 @@ export class GroupMember {
   group: Group;
 
   @ManyToOne(() => User, {
+    nullable: true,
     onDelete: 'CASCADE',
   })
   @JoinColumn({
     name: 'id_users',
     referencedColumnName: 'id',
   })
-  user: User;
+  user: User | null;
 }

@@ -9,7 +9,7 @@ import {
 
 import type {
   SecretSantaAssignment,
-  SecretSantaAssignmentWithUsers,
+  SecretSantaPrivateAssignment,
   SecretSantaSummaryItem,
 } from '../types/secret_santa_assignments.schema';
 
@@ -19,7 +19,7 @@ export const useSecretSantaAssignments = () => {
   >([]);
 
   const [myAssignment, setMyAssignment] =
-    useState<SecretSantaAssignmentWithUsers | null>(
+    useState<SecretSantaPrivateAssignment | null>(
       null,
     );
 
@@ -55,7 +55,8 @@ export const useSecretSantaAssignments = () => {
       const response =
         await drawAssignmentsRequest(eventId);
 
-      setAssignments(response);
+      // El servidor oculta las parejas para proteger el sorteo.
+      setAssignments([]);
 
       return response;
     } catch (error) {
@@ -99,19 +100,13 @@ export const useSecretSantaAssignments = () => {
       const response =
         await markGiftDeliveredRequest(eventId);
 
-      setMyAssignment((currentAssignment) =>
-        currentAssignment
-          ? {
-              ...currentAssignment,
-              ...response,
-            }
-          : currentAssignment,
-      );
+      setMyAssignment((currentAssignment) => currentAssignment
+        ? { ...currentAssignment, ...response.assignment } : currentAssignment);
 
       setAssignments((currentAssignments) =>
         currentAssignments.map((assignment) =>
-          assignment.id === response.id
-            ? response
+          assignment.id === response.assignment.id
+            ? response.assignment
             : assignment,
         ),
       );

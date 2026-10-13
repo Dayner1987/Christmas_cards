@@ -17,7 +17,7 @@ const activities = [
     text: 'Ana Torres agregó una tarjeta a su lista',
     time: 'Hace 28 minutos',
     icon: Heart,
-    color: 'bg-pink-100 text-pink-600',
+    color: 'bg-rose-100 text-rose-600',
   },
 ];
 

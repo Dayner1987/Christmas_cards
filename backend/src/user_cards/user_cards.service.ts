@@ -7,9 +7,12 @@ import {
 
 import { InjectRepository } from '@nestjs/typeorm';
 
+
 import {
+  In,
   Repository,
 } from 'typeorm';
+
 
 import {
   CreateUserCardDto,
@@ -36,6 +39,7 @@ import {
 import {
   Group,
 } from '../groups/entities/group.entity';
+
 
 @Injectable()
 export class UserCardsService {
@@ -136,45 +140,65 @@ export class UserCardsService {
     );
   }
 
-  // =====================================================
+  // backend/src/user_cards/user_cards.service.ts
+
   // TARJETAS ENVIADAS
-  // =====================================================
-
   async findSent(senderId: string) {
-    return await this.userCardsRepository.find({
-      where: {
-        senderId,
-      },
-
+    const records = await this.userCardsRepository.find({
+      where: { senderId },
       relations: {
         card: true,
+        recipient: true,
       },
-
       order: {
         createdAt: 'DESC',
       },
     });
+
+    return records.map(({ recipient, ...message }) => ({
+      ...message,
+      recipientName: this.displayName(recipient),
+    }));
   }
 
-  // =====================================================
   // TARJETAS RECIBIDAS
-  // =====================================================
-
   async findReceived(recipientId: string) {
-    return await this.userCardsRepository.find({
+    const records = await this.userCardsRepository.find({
       where: {
         recipientId,
+        deliveryStatus: In([
+          DeliveryStatus.SENT,
+          DeliveryStatus.DELIVERED,
+          DeliveryStatus.READ,
+        ]),
       },
-
       relations: {
         card: true,
+        sender: true,
       },
-
       order: {
         createdAt: 'DESC',
       },
     });
+
+    return records.map(({ sender, ...message }) => ({
+      ...message,
+      senderName: this.displayName(sender),
+    }));
   }
+
+  private displayName(user: User | null | undefined): string {
+    if (!user) return 'Usuario';
+
+    return (
+      [user.firstName, user.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim() ||
+      user.username
+    );
+  }
+
 
   // =====================================================
   // VER UNA TARJETA

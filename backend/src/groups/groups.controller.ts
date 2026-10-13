@@ -8,10 +8,14 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFile,
+  UseInterceptors,
   UseGuards,
 } from '@nestjs/common';
 
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageUploadOptions } from '../cloudinary/image-upload.options';
 
 import { GroupsService } from './groups.service';
 
@@ -72,6 +76,12 @@ export class GroupsController {
   // =====================================================
 
   @UseGuards(JwtAuthGuard)
+  @Get('admin')
+  findAllForAdmin(@Req() request: AuthenticatedRequest) {
+    return this.groupsService.findAllForAdmin(request.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('me')
   findMyGroups(
     @Req()
@@ -101,16 +111,42 @@ export class GroupsController {
   // GET /groups/:id
   // =====================================================
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(
+    @Req() request: AuthenticatedRequest,
     @Param(
       'id',
       ParseUUIDPipe,
     )
     id: string,
   ) {
-    return this.groupsService.findOne(id);
+    return this.groupsService.assertCanView(id, request.user.sub);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/image')
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
+  uploadImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
+    return this.groupsService.updateImage(id, request.user.sub, file);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/image')
+  deleteImage(@Param('id', ParseUUIDPipe) id: string, @Req() request: AuthenticatedRequest) {
+    return this.groupsService.removeImage(id, request.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/invitation/qr')
+  invitationQr(@Param('id', ParseUUIDPipe) id: string, @Req() request: AuthenticatedRequest) {
+    return this.groupsService.invitationQr(id, request.user.sub);
+  }
+
 
   // =====================================================
   // ACTUALIZAR GRUPO

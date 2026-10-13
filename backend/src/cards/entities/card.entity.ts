@@ -50,8 +50,17 @@ export class Card {
     name: 'front_image_url',
     type: 'varchar',
     length: 1000,
+    nullable: true,
   })
-  frontImageUrl: string;
+  frontImageUrl: string | null;
+
+  @Column({
+    name: 'front_image_public_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  frontImagePublicId: string | null;
 
   @Column({
     name: 'background_image_url',
@@ -62,12 +71,28 @@ export class Card {
   backgroundImageUrl: string | null;
 
   @Column({
+    name: 'background_image_public_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  backgroundImagePublicId: string | null;
+
+  @Column({
     name: 'preview_image_url',
     type: 'varchar',
     length: 1000,
     nullable: true,
   })
   previewImageUrl: string | null;
+
+  @Column({
+    name: 'preview_image_public_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  previewImagePublicId: string | null;
 
   @Column({
     name: 'category',

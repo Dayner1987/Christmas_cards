@@ -8,10 +8,14 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFile,
+  UseInterceptors,
   UseGuards,
 } from '@nestjs/common';
 
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageUploadOptions } from '../cloudinary/image-upload.options';
 
 import { CardsService } from './cards.service';
 
@@ -62,6 +66,31 @@ export class CardsController {
   }
 
   // =====================================================
+  @Get('admin')
+  @UseGuards(JwtAuthGuard)
+  findAllAdmin(@Req() request: AuthenticatedRequest) {
+    return this.cardsService.findAllForAdmin(request.user.sub);
+  }
+
+  @Post(':id/images/:slot')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
+  uploadImage(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('slot') slot: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) { return this.cardsService.uploadImage(id, request.user.sub, slot, file); }
+
+  @Delete(':id/images/:slot')
+  @UseGuards(JwtAuthGuard)
+  deleteImage(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('slot') slot: string,
+  ) { return this.cardsService.deleteImage(id, request.user.sub, slot); }
+
+
   // VER TARJETA PÚBLICA
   // GET /cards/public/:id
   // =====================================================

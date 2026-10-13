@@ -59,10 +59,10 @@ export default function GroupDialog({
         event.preventDefault();
         if (!busy) onClose();
       }}
-      className="m-auto max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-3xl overflow-y-auto rounded-3xl border border-purple-100 bg-white p-0 text-slate-800 shadow-2xl backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm"
+      className="m-auto max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-3xl overflow-y-auto rounded-3xl border border-red-100 bg-white p-0 text-slate-800 shadow-2xl backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm"
     >
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-purple-100 bg-white px-5 py-4 sm:px-6">
-        <h2 id={titleId} className="text-xl font-black text-purple-950">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-red-100 bg-white px-5 py-4 sm:px-6">
+        <h2 id={titleId} className="text-xl font-black text-red-950">
           {title}
         </h2>
 
@@ -71,7 +71,7 @@ export default function GroupDialog({
           disabled={busy}
           aria-label="Cerrar ventana"
           onClick={onClose}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
         >
           <X size={20} />
         </button>
@@ -121,7 +121,7 @@ export function GroupConfirmModal({
 
   return (
     <GroupDialog title={title} busy={busy} onClose={onClose}>
-      <div className={`mb-4 inline-flex rounded-2xl p-4 ${danger ? 'bg-rose-50 text-rose-600' : 'bg-purple-50 text-purple-600'}`}>
+      <div className={`mb-4 inline-flex rounded-2xl p-4 ${danger ? 'bg-rose-50 text-rose-600' : 'bg-red-50 text-red-600'}`}>
         <TriangleAlert size={28} aria-hidden="true" />
       </div>
 
@@ -139,7 +139,7 @@ export function GroupConfirmModal({
           type="button"
           disabled={busy}
           onClick={onClose}
-          className="min-h-11 rounded-xl border border-purple-200 px-5 py-2.5 text-sm font-bold text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+          className="min-h-11 rounded-xl border border-red-200 px-5 py-2.5 text-sm font-bold text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
         >
           Cancelar
         </button>
@@ -148,8 +148,8 @@ export function GroupConfirmModal({
           type="button"
           disabled={busy}
           onClick={() => void confirm()}
-          className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:opacity-40 ${
-            danger ? 'bg-rose-600 hover:bg-rose-700' : 'bg-purple-700 hover:bg-purple-800'
+          className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-40 ${
+            danger ? 'bg-rose-600 hover:bg-rose-700' : 'bg-red-700 hover:bg-red-800'
           }`}
         >
           {busy && <LoaderCircle size={17} className="motion-safe:animate-spin" />}

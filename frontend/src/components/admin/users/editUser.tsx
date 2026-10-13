@@ -128,10 +128,10 @@ const fields: {
 ];
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:opacity-60';
+  'w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:opacity-60';
 
 const primaryButtonClass =
-  'inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/20 outline-none transition hover:from-purple-700 hover:to-fuchsia-700 focus-visible:ring-4 focus-visible:ring-purple-300 disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-red-500/20 outline-none transition hover:from-red-700 hover:to-rose-700 focus-visible:ring-4 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60';
 
 function userToForm(user: User): ProfileForm {
   return {
@@ -464,7 +464,7 @@ export default function EditUser({
 
   if (initialLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-900 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-950 via-red-900 to-rose-900 px-4">
         <div
           role="status"
           className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-6 py-5 text-white backdrop-blur-xl"
@@ -482,9 +482,9 @@ export default function EditUser({
 
   if (!profile) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-900 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-950 via-red-900 to-rose-900 px-4">
         <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
-          <h1 className="text-2xl font-black text-purple-950">
+          <h1 className="text-2xl font-black text-red-950">
             No pudimos cargar tu perfil
           </h1>
 
@@ -502,7 +502,7 @@ export default function EditUser({
 
           <Link
             to={backPath}
-            className="mt-5 block text-center text-sm font-bold text-purple-700"
+            className="mt-5 block text-center text-sm font-bold text-red-700"
           >
             Volver al inicio
           </Link>
@@ -532,21 +532,21 @@ export default function EditUser({
   const displayedError = localError || error;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-900 px-4 py-8 sm:px-6 sm:py-10">
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-red-950 via-red-900 to-rose-900 px-4 py-8 sm:px-6 sm:py-10">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-purple-400/20 blur-3xl"
+        className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-red-400/20 blur-3xl"
       />
 
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-fuchsia-400/20 blur-3xl"
+        className="pointer-events-none absolute -bottom-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-rose-400/20 blur-3xl"
       />
 
       <div className="relative z-10 mx-auto max-w-6xl">
         <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-purple-700 shadow-lg">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-red-700 shadow-lg">
               <Gift size={26} aria-hidden="true" />
             </div>
 
@@ -554,7 +554,7 @@ export default function EditUser({
               <p className="text-lg font-black text-white">
                 ChristmasCards
               </p>
-              <p className="text-sm text-purple-200">
+              <p className="text-sm text-red-200">
                 Configuración de tu cuenta
               </p>
             </div>
@@ -571,8 +571,8 @@ export default function EditUser({
 
         <div className="grid overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-2xl shadow-black/30 lg:grid-cols-[300px_minmax(0,1fr)]">
           {/* Fotografía y resumen */}
-          <aside className="min-w-0 bg-gradient-to-b from-purple-950 to-violet-900 p-6 text-white sm:p-8">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-purple-100">
+          <aside className="min-w-0 bg-gradient-to-b from-red-950 to-red-900 p-6 text-white sm:p-8">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-100">
               <Sparkles size={14} aria-hidden="true" />
               Mi cuenta
             </span>
@@ -581,7 +581,7 @@ export default function EditUser({
               Tu perfil
             </h1>
 
-            <p className="mt-3 text-sm leading-6 text-purple-200">
+            <p className="mt-3 text-sm leading-6 text-red-200">
               Personaliza tu cuenta y comparte un poco de ti.
             </p>
 
@@ -602,7 +602,7 @@ export default function EditUser({
                   <div
                     role="img"
                     aria-label={`Avatar de ${fullName}`}
-                    className="flex h-32 w-32 items-center justify-center rounded-3xl bg-gradient-to-br from-purple-400 to-fuchsia-500 text-4xl font-black shadow-xl ring-4 ring-white/15"
+                    className="flex h-32 w-32 items-center justify-center rounded-3xl bg-gradient-to-br from-red-400 to-rose-500 text-4xl font-black shadow-xl ring-4 ring-white/15"
                   >
                     {initials}
                   </div>
@@ -610,7 +610,7 @@ export default function EditUser({
 
                 <span
                   aria-hidden="true"
-                  className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-purple-700 shadow-lg"
+                  className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-red-700 shadow-lg"
                 >
                   <Camera size={20} />
                 </span>
@@ -620,7 +620,7 @@ export default function EditUser({
                 {fullName}
               </h2>
 
-              <p className="mt-1 w-full break-all text-sm text-purple-200">
+              <p className="mt-1 w-full break-all text-sm text-red-200">
                 @{profile.username}
               </p>
 
@@ -647,23 +647,23 @@ export default function EditUser({
                 type="button"
                 disabled={busy}
                 onClick={() => fileInputRef.current?.click()}
-                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-purple-800 outline-none transition hover:bg-purple-50 focus-visible:ring-4 focus-visible:ring-purple-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-red-800 outline-none transition hover:bg-red-50 focus-visible:ring-4 focus-visible:ring-red-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Upload size={17} aria-hidden="true" />
                 Seleccionar fotografía
               </button>
 
-              <p className="text-center text-xs leading-5 text-purple-200">
+              <p className="text-center text-xs leading-5 text-red-200">
                 JPG, PNG o WEBP. Máximo 5 MB.
               </p>
 
               {selectedFile && (
                 <div className="rounded-2xl border border-white/15 bg-white/10 p-3">
-                  <p className="break-all text-xs text-purple-100">
+                  <p className="break-all text-xs text-red-100">
                     {selectedFile.name}
                   </p>
 
-                  <p className="mt-1 text-xs text-fuchsia-200">
+                  <p className="mt-1 text-xs text-rose-200">
                     Vista previa · Foto sin guardar
                   </p>
 
@@ -695,7 +695,7 @@ export default function EditUser({
                       clearSelectedFile();
                       resetMessages();
                     }}
-                    className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg text-xs font-semibold text-purple-100 hover:bg-white/10 disabled:opacity-60"
+                    className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg text-xs font-semibold text-red-100 hover:bg-white/10 disabled:opacity-60"
                   >
                     <X size={15} aria-hidden="true" />
                     Cancelar selección
@@ -731,7 +731,7 @@ export default function EditUser({
           {/* Datos y contraseña */}
           <div className="min-w-0 p-5 sm:p-8 lg:p-10">
             <div className="mb-7">
-              <span className="inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-purple-700">
+              <span className="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-red-700">
                 Información de perfil
               </span>
 
@@ -770,7 +770,7 @@ export default function EditUser({
 
             <form onSubmit={handleSaveProfile}>
               <fieldset disabled={busy} className="min-w-0">
-                <legend className="mb-5 flex items-center gap-2 text-lg font-bold text-purple-950">
+                <legend className="mb-5 flex items-center gap-2 text-lg font-bold text-red-950">
                   <UserRound size={20} aria-hidden="true" />
                   Datos personales
                 </legend>
@@ -871,7 +871,7 @@ export default function EditUser({
               className="mt-9 border-t border-slate-100 pt-8"
             >
               <fieldset disabled={busy} className="min-w-0">
-                <legend className="flex items-center gap-2 text-lg font-bold text-purple-950">
+                <legend className="flex items-center gap-2 text-lg font-bold text-red-950">
                   <LockKeyhole size={20} aria-hidden="true" />
                   Cambiar contraseña
                 </legend>
@@ -939,7 +939,7 @@ export default function EditUser({
                   onClick={() =>
                     setShowPasswords((current) => !current)
                   }
-                  className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-lg text-sm font-semibold text-purple-700 outline-none hover:text-purple-900 focus-visible:ring-2 focus-visible:ring-purple-400"
+                  className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-lg text-sm font-semibold text-red-700 outline-none hover:text-red-900 focus-visible:ring-2 focus-visible:ring-red-400"
                 >
                   {showPasswords ? (
                     <EyeOff size={17} aria-hidden="true" />

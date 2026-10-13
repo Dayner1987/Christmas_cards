@@ -9,7 +9,7 @@ export interface Card {
   creatorId: string | null;
   name: string;
   description: string | null;
-  frontImageUrl: string;
+  frontImageUrl: string | null;
   backgroundImageUrl: string | null;
   previewImageUrl: string | null;
   category: CardCategory;
@@ -22,9 +22,6 @@ export interface Card {
 export interface CreateCard {
   name: string;
   description?: string;
-  frontImageUrl: string;
-  backgroundImageUrl?: string;
-  previewImageUrl?: string;
   category?: CardCategory;
   isPublic?: boolean;
 }

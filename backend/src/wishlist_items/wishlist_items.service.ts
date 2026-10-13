@@ -1,10 +1,13 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { IMAGE_FOLDERS } from '../cloudinary/cloudinary.constants';
 
 import {
   WishlistItem,
@@ -24,6 +27,7 @@ import {
 
 @Injectable()
 export class WishlistItemsService {
+  private readonly logger = new Logger(WishlistItemsService.name);
   constructor(
     @InjectRepository(WishlistItem)
     private readonly wishlistItemsRepository:
@@ -31,6 +35,7 @@ export class WishlistItemsService {
 
     private readonly wishlistsService:
       WishlistsService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(
@@ -55,8 +60,8 @@ export class WishlistItemsService {
         productUrl:
           dto.productUrl ?? null,
 
-        imageUrl:
-          dto.imageUrl ?? null,
+        imageUrl: null,
+        imagePublicId: null,
 
         estimatedPrice:
           dto.estimatedPrice ?? null,
@@ -146,6 +151,45 @@ export class WishlistItemsService {
     );
   }
 
+  async uploadImage(wishlistId: string, itemId: string, userId: string, file: Express.Multer.File | undefined) {
+    const item = await this.findOne(wishlistId, itemId, userId);
+    const uploaded = await this.cloudinaryService.uploadImage(file, IMAGE_FOLDERS.WISHLIST_ITEMS);
+    let previous: string | null = null;
+    try {
+      const saved = await this.wishlistItemsRepository.manager.transaction(async manager => {
+        const repo = manager.getRepository(WishlistItem);
+        const current = await repo.findOne({ where: { id: item.id, wishlistId }, lock: { mode: 'pessimistic_write' } });
+        if (!current) throw new NotFoundException('Elemento no encontrado.');
+        previous = current.imagePublicId;
+        current.imageUrl = uploaded.url;
+        current.imagePublicId = uploaded.publicId;
+        return repo.save(current);
+      });
+      await this.cleanupImage(previous);
+      return saved;
+    } catch (error) {
+      await this.cleanupImage(uploaded.publicId);
+      throw error;
+    }
+  }
+
+  async deleteImage(wishlistId: string, itemId: string, userId: string) {
+    const item = await this.findOne(wishlistId, itemId, userId);
+    const previous = item.imagePublicId;
+    item.imageUrl = null;
+    item.imagePublicId = null;
+    const saved = await this.wishlistItemsRepository.save(item);
+    await this.cleanupImage(previous);
+    return saved;
+  }
+
+  private async cleanupImage(id: string | null) {
+    if (!id) return;
+    try { await this.cloudinaryService.deleteImage(id); }
+    catch { this.logger.warn(`Limpieza pendiente en Cloudinary: ${id}`); }
+  }
+
+
   async remove(
     wishlistId: string,
     itemId: string,
@@ -157,9 +201,8 @@ export class WishlistItemsService {
       userId,
     );
 
-    await this.wishlistItemsRepository.remove(
-      item,
-    );
+    await this.wishlistItemsRepository.remove(item);
+    await this.cleanupImage(item.imagePublicId);
 
     return {
       message:

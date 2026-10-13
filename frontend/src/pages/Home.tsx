@@ -45,28 +45,28 @@ const features = [
     description:
       'Elige una tarjeta y acompáñala con esas palabras que hacen especial un regalo.',
     icon: Mail,
-    color: 'bg-purple-100 text-purple-700',
+    color: 'bg-red-100 text-red-700',
   },
   {
     title: 'Tus personas, juntas',
     description:
       'Organiza grupos con familiares y amigos para compartir la emoción de estas fechas.',
     icon: Users,
-    color: 'bg-fuchsia-100 text-fuchsia-700',
+    color: 'bg-rose-100 text-rose-700',
   },
   {
     title: 'Deseos para compartir',
     description:
       'Crea tu lista de deseos y descubre pequeños detalles que alegrarían a los demás.',
     icon: Heart,
-    color: 'bg-violet-100 text-violet-700',
+    color: 'bg-red-100 text-red-700',
   },
   {
     title: 'Un amigo secreto',
     description:
       'Organiza el intercambio de regalos de tu grupo y disfruta de preparar una sorpresa.',
     icon: Gift,
-    color: 'bg-pink-100 text-pink-700',
+    color: 'bg-rose-100 text-rose-700',
   },
 ];
 
@@ -92,7 +92,7 @@ const steps = [
 ];
 
 const primaryButton =
-  'inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-purple-500/20 outline-none transition hover:from-purple-700 hover:to-fuchsia-700 focus-visible:ring-4 focus-visible:ring-purple-300';
+  'inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-red-500/20 outline-none transition hover:from-red-700 hover:to-rose-700 focus-visible:ring-4 focus-visible:ring-red-300';
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -186,10 +186,10 @@ export default function Home() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <div className="min-h-screen bg-[#fcfaff] font-sans text-slate-800">
+    <div className="min-h-screen bg-[#fff8f5] font-sans text-slate-800">
       <a
         href="#contenido"
-        className="sr-only fixed left-4 top-4 z-[60] rounded-xl bg-white px-4 py-3 font-bold text-purple-800 shadow-lg focus:not-sr-only"
+        className="sr-only fixed left-4 top-4 z-[60] rounded-xl bg-white px-4 py-3 font-bold text-red-800 shadow-lg focus:not-sr-only"
       >
         Saltar al contenido
       </a>
@@ -197,20 +197,20 @@ export default function Home() {
       {/* Navbar */}
       <header
         ref={headerRef}
-        className="sticky top-0 z-50 border-b border-purple-100 bg-white/95 backdrop-blur-xl"
+        className="sticky top-0 z-50 border-b border-red-100 bg-white/95 backdrop-blur-xl"
       >
         <div className="mx-auto flex min-h-[80px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link
             to="/"
             onClick={closeMenu}
             aria-label="ChristmasCards, página principal"
-            className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-4 focus-visible:ring-purple-200"
+            className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-4 focus-visible:ring-red-200"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white shadow-lg shadow-purple-200">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-600 to-rose-600 text-white shadow-lg shadow-red-200">
               <Gift size={23} aria-hidden="true" />
             </span>
 
-            <span className="text-base font-black tracking-tight text-purple-950 sm:text-xl">
+            <span className="text-base font-black tracking-tight text-red-950 sm:text-xl">
               ChristmasCards
             </span>
           </Link>
@@ -223,7 +223,7 @@ export default function Home() {
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded-lg py-2 text-sm font-semibold text-slate-600 outline-none transition hover:text-purple-700 focus-visible:ring-2 focus-visible:ring-purple-300"
+                className="rounded-lg py-2 text-sm font-semibold text-slate-600 outline-none transition hover:text-red-700 focus-visible:ring-2 focus-visible:ring-red-300"
               >
                 {item.label}
               </a>
@@ -243,7 +243,7 @@ export default function Home() {
               <>
                 <Link
                   to="/login"
-                  className="rounded-xl px-4 py-3 text-sm font-bold text-purple-800 outline-none transition hover:bg-purple-50 focus-visible:ring-2 focus-visible:ring-purple-300"
+                  className="rounded-xl px-4 py-3 text-sm font-bold text-red-800 outline-none transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300"
                 >
                   Iniciar sesión
                 </Link>
@@ -270,7 +270,7 @@ export default function Home() {
             onClick={() =>
               setMenuOpen((current) => !current)
             }
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-purple-100 text-purple-900 outline-none transition hover:bg-purple-50 focus-visible:ring-2 focus-visible:ring-purple-400 lg:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-red-100 text-red-900 outline-none transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 lg:hidden"
           >
             {menuOpen ? (
               <X size={23} aria-hidden="true" />
@@ -284,7 +284,7 @@ export default function Home() {
           <nav
             id="home-mobile-menu"
             aria-label="Navegación móvil"
-            className="max-h-[calc(100dvh-80px)] overflow-y-auto border-t border-purple-100 bg-white px-4 py-4 lg:hidden"
+            className="max-h-[calc(100dvh-80px)] overflow-y-auto border-t border-red-100 bg-white px-4 py-4 lg:hidden"
           >
             <div className="mx-auto max-w-7xl space-y-1">
               {navigation.map((item) => (
@@ -292,13 +292,13 @@ export default function Home() {
                   key={item.href}
                   href={item.href}
                   onClick={closeMenu}
-                  className="block rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-purple-50 hover:text-purple-700"
+                  className="block rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-red-50 hover:text-red-700"
                 >
                   {item.label}
                 </a>
               ))}
 
-              <div className="grid gap-3 border-t border-purple-100 pt-4">
+              <div className="grid gap-3 border-t border-red-100 pt-4">
                 {hasSession ? (
                   <Link
                     to={dashboardPath}
@@ -316,7 +316,7 @@ export default function Home() {
                     <Link
                       to="/login"
                       onClick={closeMenu}
-                      className="rounded-xl border border-purple-200 px-4 py-3 text-center text-sm font-bold text-purple-800"
+                      className="rounded-xl border border-red-200 px-4 py-3 text-center text-sm font-bold text-red-800"
                     >
                       Iniciar sesión
                     </Link>
@@ -344,24 +344,24 @@ export default function Home() {
         {/* Presentación */}
         <section
           id="inicio"
-          className="relative scroll-mt-24 overflow-hidden bg-gradient-to-br from-violet-950 via-purple-900 to-fuchsia-900"
+          className="relative scroll-mt-24 overflow-hidden bg-gradient-to-br from-red-950 via-red-900 to-rose-900"
         >
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-purple-400/20 blur-3xl"
+            className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-red-400/20 blur-3xl"
           />
 
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-40 right-0 h-[30rem] w-[30rem] rounded-full bg-fuchsia-400/20 blur-3xl"
+            className="pointer-events-none absolute -bottom-40 right-0 h-[30rem] w-[30rem] rounded-full bg-rose-400/20 blur-3xl"
           />
 
           <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-purple-100 sm:text-sm">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-red-100 sm:text-sm">
                 <Sparkles
                   size={16}
-                  className="text-fuchsia-300"
+                  className="text-rose-300"
                   aria-hidden="true"
                 />
                 Pequeños detalles, grandes sonrisas
@@ -369,12 +369,12 @@ export default function Home() {
 
               <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
                 La Navidad se disfruta más
-                <span className="text-fuchsia-300">
+                <span className="text-rose-300">
                   {' '}juntos.
                 </span>
               </h1>
 
-              <p className="mt-6 max-w-xl text-base leading-8 text-purple-100 sm:text-lg">
+              <p className="mt-6 max-w-xl text-base leading-8 text-red-100 sm:text-lg">
                 Envía tarjetas, comparte deseos y organiza
                 el amigo secreto con tus personas favoritas.
                 Todo comienza con un detalle.
@@ -383,7 +383,7 @@ export default function Home() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to={startPath}
-                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-black text-purple-900 shadow-xl shadow-black/10 outline-none transition hover:bg-purple-50 focus-visible:ring-4 focus-visible:ring-fuchsia-300"
+                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-black text-red-900 shadow-xl shadow-black/10 outline-none transition hover:bg-red-50 focus-visible:ring-4 focus-visible:ring-rose-300"
                 >
                   {hasSession
                     ? 'Entrar a mi espacio'
@@ -397,7 +397,7 @@ export default function Home() {
 
                 <a
                   href="#como-funciona"
-                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/5 px-6 py-3.5 text-sm font-bold text-white outline-none transition hover:bg-white/10 focus-visible:ring-4 focus-visible:ring-purple-300"
+                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/5 px-6 py-3.5 text-sm font-bold text-white outline-none transition hover:bg-white/10 focus-visible:ring-4 focus-visible:ring-red-300"
                 >
                   Descubre cómo funciona
                   <ChevronRight
@@ -407,7 +407,7 @@ export default function Home() {
                 </a>
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs text-purple-100 sm:text-sm">
+              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs text-red-100 sm:text-sm">
                 {[
                   'Tarjetas personales',
                   'Deseos compartidos',
@@ -420,7 +420,7 @@ export default function Home() {
                     <Check
                       size={15}
                       aria-hidden="true"
-                      className="text-fuchsia-300"
+                      className="text-rose-300"
                     />
                     {text}
                   </span>
@@ -437,15 +437,15 @@ export default function Home() {
 
               <div className="relative rounded-[2rem] border border-white/20 bg-white/10 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
                 <div className="rounded-3xl bg-[#fffaf5] p-6 text-center sm:p-10">
-                  <div className="flex items-center justify-between text-purple-400">
+                  <div className="flex items-center justify-between text-red-400">
                     <Stars size={23} aria-hidden="true" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-700">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-700">
                       Un detalle para ti
                     </span>
                     <Sparkles size={23} aria-hidden="true" />
                   </div>
 
-                  <div className="mx-auto mt-8 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-purple-600 to-fuchsia-500 text-white shadow-xl shadow-purple-200 sm:h-28 sm:w-28">
+                  <div className="mx-auto mt-8 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-red-600 to-rose-500 text-white shadow-xl shadow-red-200 sm:h-28 sm:w-28">
                     <Gift
                       size={55}
                       strokeWidth={1.5}
@@ -453,7 +453,7 @@ export default function Home() {
                     />
                   </div>
 
-                  <p className="mt-7 text-3xl font-black tracking-tight text-purple-950 sm:text-4xl">
+                  <p className="mt-7 text-3xl font-black tracking-tight text-red-950 sm:text-4xl">
                     ¡Feliz Navidad!
                   </p>
 
@@ -462,11 +462,11 @@ export default function Home() {
                     y las personas que hacen especial tu vida.
                   </p>
 
-                  <div className="mt-7 flex items-center justify-center gap-2 text-sm font-bold text-purple-700">
+                  <div className="mt-7 flex items-center justify-center gap-2 text-sm font-bold text-red-700">
                     <Heart
                       size={16}
                       aria-hidden="true"
-                      className="fill-purple-100"
+                      className="fill-red-100"
                     />
                     Con mucho cariño
                   </div>
@@ -481,7 +481,7 @@ export default function Home() {
                     <p className="text-sm font-semibold">
                       Un mensaje puede alegrar el día
                     </p>
-                    <p className="mt-1 text-xs text-purple-200">
+                    <p className="mt-1 text-xs text-red-200">
                       Ejemplo de una tarjeta para compartir
                     </p>
                   </div>
@@ -498,11 +498,11 @@ export default function Home() {
         >
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-2xl text-center">
-              <span className="inline-flex rounded-full bg-purple-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-purple-700">
+              <span className="inline-flex rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-700">
                 Más que una tarjeta
               </span>
 
-              <h2 className="mt-4 text-3xl font-black tracking-tight text-purple-950 sm:text-4xl">
+              <h2 className="mt-4 text-3xl font-black tracking-tight text-red-950 sm:text-4xl">
                 Un lugar para compartir lo bonito.
               </h2>
 
@@ -519,7 +519,7 @@ export default function Home() {
                 return (
                   <article
                     key={feature.title}
-                    className="rounded-3xl border border-purple-100 bg-white p-6 shadow-sm transition hover:border-purple-200 hover:shadow-lg hover:shadow-purple-900/5"
+                    className="rounded-3xl border border-red-100 bg-white p-6 shadow-sm transition hover:border-red-200 hover:shadow-lg hover:shadow-red-900/5"
                   >
                     <span
                       className={`flex h-13 w-13 items-center justify-center rounded-2xl p-3 ${feature.color}`}
@@ -527,7 +527,7 @@ export default function Home() {
                       <Icon size={26} aria-hidden="true" />
                     </span>
 
-                    <h3 className="mt-5 text-lg font-bold text-purple-950">
+                    <h3 className="mt-5 text-lg font-bold text-red-950">
                       {feature.title}
                     </h3>
 
@@ -544,16 +544,16 @@ export default function Home() {
         {/* Pasos */}
         <section
           id="como-funciona"
-          className="scroll-mt-24 border-y border-purple-100 bg-purple-50/70 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+          className="scroll-mt-24 border-y border-red-100 bg-red-50/70 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
         >
           <div className="mx-auto max-w-7xl">
             <div className="grid items-start gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-purple-600">
+                <span className="text-xs font-bold uppercase tracking-widest text-red-600">
                   Así de sencillo
                 </span>
 
-                <h2 className="mt-4 text-3xl font-black tracking-tight text-purple-950 sm:text-4xl">
+                <h2 className="mt-4 text-3xl font-black tracking-tight text-red-950 sm:text-4xl">
                   De una idea a una sonrisa.
                 </h2>
 
@@ -576,14 +576,14 @@ export default function Home() {
                 {steps.map((step) => (
                   <article
                     key={step.number}
-                    className="flex items-start gap-4 rounded-2xl border border-purple-100 bg-white p-5 sm:gap-5 sm:p-6"
+                    className="flex items-start gap-4 rounded-2xl border border-red-100 bg-white p-5 sm:gap-5 sm:p-6"
                   >
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-100 text-lg font-black text-purple-700">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-lg font-black text-red-700">
                       {step.number}
                     </span>
 
                     <div>
-                      <h3 className="text-lg font-bold text-purple-950">
+                      <h3 className="text-lg font-bold text-red-950">
                         {step.title}
                       </h3>
 
@@ -600,14 +600,14 @@ export default function Home() {
 
         {/* Invitación final */}
         <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-r from-purple-950 via-purple-800 to-fuchsia-800 px-6 py-12 text-center sm:px-12 sm:py-16">
+          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-r from-red-950 via-red-800 to-rose-800 px-6 py-12 text-center sm:px-12 sm:py-16">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl"
             />
 
             <div className="relative">
-              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-fuchsia-200">
+              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-rose-200">
                 <PartyPopper size={32} aria-hidden="true" />
               </span>
 
@@ -615,14 +615,14 @@ export default function Home() {
                 Haz que esta Navidad tenga algo de ti.
               </h2>
 
-              <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-purple-100 sm:text-base">
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-red-100 sm:text-base">
                 Una tarjeta, un deseo, una sorpresa.
                 Elige cómo quieres empezar.
               </p>
 
               <Link
                 to={startPath}
-                className="mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-black text-purple-900 outline-none transition hover:bg-purple-50 focus-visible:ring-4 focus-visible:ring-fuchsia-300"
+                className="mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-black text-red-900 outline-none transition hover:bg-red-50 focus-visible:ring-4 focus-visible:ring-rose-300"
               >
                 {hasSession
                   ? 'Volver a mi espacio'
@@ -636,15 +636,15 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-violet-950 px-4 pb-6 pt-12 text-purple-100 sm:px-6 lg:px-8">
+      <footer className="bg-red-950 px-4 pb-6 pt-12 text-red-100 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]">
             <div>
               <Link
                 to="/"
-                className="inline-flex items-center gap-3 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
+                className="inline-flex items-center gap-3 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-red-300"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-500 text-white">
                   <Gift size={22} aria-hidden="true" />
                 </span>
 
@@ -653,7 +653,7 @@ export default function Home() {
                 </span>
               </Link>
 
-              <p className="mt-4 max-w-sm text-sm leading-7 text-purple-200">
+              <p className="mt-4 max-w-sm text-sm leading-7 text-red-200">
                 Un espacio para compartir momentos especiales
                 con familia y amigos, un detalle a la vez.
               </p>
@@ -669,7 +669,7 @@ export default function Home() {
                   <li key={item.href}>
                     <a
                       href={item.href}
-                      className="text-purple-200 transition hover:text-white"
+                      className="text-red-200 transition hover:text-white"
                     >
                       {item.label}
                     </a>
@@ -687,7 +687,7 @@ export default function Home() {
                 <li>
                   <Link
                     to="/login"
-                    className="text-purple-200 transition hover:text-white"
+                    className="text-red-200 transition hover:text-white"
                   >
                     Iniciar sesión
                   </Link>
@@ -696,7 +696,7 @@ export default function Home() {
                 <li>
                   <Link
                     to="/register"
-                    className="text-purple-200 transition hover:text-white"
+                    className="text-red-200 transition hover:text-white"
                   >
                     Crear cuenta
                   </Link>
@@ -706,7 +706,7 @@ export default function Home() {
                   <li>
                     <Link
                       to={dashboardPath}
-                      className="text-purple-200 transition hover:text-white"
+                      className="text-red-200 transition hover:text-white"
                     >
                       Ir a mi espacio
                     </Link>
@@ -716,7 +716,7 @@ export default function Home() {
             </nav>
           </div>
 
-          <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center text-xs text-purple-200 sm:flex-row sm:text-left">
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center text-xs text-red-200 sm:flex-row sm:text-left">
             <p>
               © {new Date().getFullYear()} ChristmasCards.
             </p>
@@ -726,7 +726,7 @@ export default function Home() {
               <Heart
                 size={13}
                 aria-hidden="true"
-                className="text-fuchsia-300"
+                className="text-rose-300"
               />
             </p>
           </div>

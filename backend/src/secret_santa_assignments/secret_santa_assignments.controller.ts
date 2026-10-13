@@ -38,7 +38,19 @@ export class SecretSantaAssignmentsController {
   constructor(
     private readonly assignmentsService:
       SecretSantaAssignmentsService,
+      
   ) {}
+
+@Get('event/:eventId/organizer-assignments')
+getOrganizerAssignments(
+  @Req() request: AuthenticatedRequest,
+  @Param('eventId', ParseUUIDPipe) eventId: string,
+) {
+  return this.assignmentsService.getOrganizerAssignments(
+    eventId,
+    request.user.sub,
+  );
+}
 
   // POST /secret-santa-assignments/event/:eventId/draw
 
@@ -78,6 +90,7 @@ export class SecretSantaAssignmentsController {
         request.user.sub,
       );
   }
+  
 
   // PATCH /secret-santa-assignments/event/:eventId/delivered
 

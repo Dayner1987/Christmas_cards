@@ -66,6 +66,9 @@ export class Group {
   })
   description: string | null;
 
+  @Column({ name: 'theme_color', type: 'varchar', length: 7, default: '#7657D5' })
+  themeColor: string;
+
   @Column({
     name: 'image_url',
     type: 'varchar',
@@ -73,6 +76,14 @@ export class Group {
     nullable: true,
   })
   imageUrl: string | null;
+
+  @Column({
+    name: 'image_public_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  imagePublicId: string | null;
 
   @Column({
     name: 'invitation_code',

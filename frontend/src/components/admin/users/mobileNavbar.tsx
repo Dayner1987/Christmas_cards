@@ -167,17 +167,17 @@ export default function MobileNavbar({
     user.role === 'admin' ? 'Administrador' : 'Cliente';
 
   return (
-    <header className="relative z-40 flex min-h-[80px] items-center justify-between gap-3 border-b border-purple-100 bg-white px-4 py-3 sm:px-6 lg:px-8">
+    <header className="relative z-40 flex min-h-[80px] items-center justify-between gap-3 border-b border-red-100 bg-white px-4 py-3 sm:px-6 lg:px-8">
       <Link
         to={homePath}
-        className="flex min-w-0 items-center gap-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+        className="flex min-w-0 items-center gap-3 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-red-400"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white lg:hidden">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white lg:hidden">
           <Gift size={21} aria-hidden="true" />
         </span>
 
         <span className="min-w-0">
-          <span className="block truncate text-sm font-black text-purple-950 sm:text-base">
+          <span className="block truncate text-sm font-black text-red-950 sm:text-base">
             ChristmasCards
           </span>
 
@@ -207,7 +207,7 @@ export default function MobileNavbar({
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((current) => !current)}
-          className="flex items-center gap-2 rounded-2xl border border-purple-100 bg-purple-50/60 p-1.5 pr-3 text-left outline-none transition hover:bg-purple-100/60 focus-visible:ring-2 focus-visible:ring-purple-400 sm:gap-3"
+          className="flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50/60 p-1.5 pr-3 text-left outline-none transition hover:bg-red-100/60 focus-visible:ring-2 focus-visible:ring-red-400 sm:gap-3"
         >
           {showAvatar ? (
             <img
@@ -221,14 +221,14 @@ export default function MobileNavbar({
           ) : (
             <span
               aria-hidden="true"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-fuchsia-600 text-sm font-black text-white"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-600 to-rose-600 text-sm font-black text-white"
             >
               {initials}
             </span>
           )}
 
           <span className="hidden min-w-0 sm:block">
-            <strong className="block max-w-[180px] truncate text-sm text-purple-950">
+            <strong className="block max-w-[180px] truncate text-sm text-red-950">
               {fullName}
             </strong>
 
@@ -240,7 +240,7 @@ export default function MobileNavbar({
           <ChevronDown
             size={16}
             aria-hidden="true"
-            className={`text-purple-500 transition-transform ${
+            className={`text-red-500 transition-transform ${
               open ? 'rotate-180' : ''
             }`}
           />
@@ -249,18 +249,18 @@ export default function MobileNavbar({
         {open && (
           <div
             id={panelId}
-            className="absolute right-0 top-full mt-3 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-purple-100 bg-white shadow-xl shadow-purple-950/10"
+            className="absolute right-0 top-full mt-3 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-red-100 bg-white shadow-xl shadow-red-950/10"
           >
-            <div className="bg-gradient-to-r from-purple-900 to-violet-900 p-5 text-white">
+            <div className="bg-gradient-to-r from-red-900 to-red-900 p-5 text-white">
               <p className="break-words font-bold">
                 {fullName}
               </p>
 
-              <p className="mt-1 break-all text-xs text-purple-200">
+              <p className="mt-1 break-all text-xs text-red-200">
                 @{user.username}
               </p>
 
-              <p className="mt-3 break-all text-sm text-purple-100">
+              <p className="mt-3 break-all text-sm text-red-100">
                 {user.email}
               </p>
 
@@ -273,7 +273,7 @@ export default function MobileNavbar({
               <Link
                 to={editProfilePath}
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-purple-950 outline-none hover:bg-purple-50 focus-visible:ring-2 focus-visible:ring-purple-400"
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-red-950 outline-none hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400"
               >
                 <Pencil size={17} aria-hidden="true" />
                 Editar perfil

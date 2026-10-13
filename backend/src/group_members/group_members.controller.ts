@@ -16,6 +16,8 @@ import { GroupMembersService } from './group_members.service';
 import { AddGroupMemberDto } from './dto/add-group-member.dto';
 import { GroupMemberRole } from './entities/group_member.entity';
 
+import { RegisterDto } from '../auth/dto/register.dto';
+
 @Controller('groups/:groupId/members')
 @UseGuards(JwtAuthGuard)
 export class GroupMembersController {
@@ -26,9 +28,10 @@ export class GroupMembersController {
   @Get()
   findAll(
     @Param('groupId') groupId: string,
+    @Req() request: any,
   ) {
     return this.groupMembersService.findMembersByGroup(
-      groupId,
+      groupId, request.user.sub,
     );
   }
 
@@ -43,6 +46,16 @@ export class GroupMembersController {
       request.user.sub,
       dto,
     );
+  }
+
+  @Get('pending')
+  findPending(@Param('groupId') groupId: string, @Req() request: any) {
+    return this.groupMembersService.findPending(groupId, request.user.sub);
+  }
+
+  @Patch(':userId/approve')
+  approveMember(@Param('groupId') groupId: string, @Param('userId') userId: string, @Req() request: any) {
+    return this.groupMembersService.approveMember(groupId, userId, request.user.sub);
   }
 
   @Patch(':userId/role')

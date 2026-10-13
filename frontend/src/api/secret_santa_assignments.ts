@@ -1,35 +1,18 @@
-import axios from 'axios';
-import { authStorage } from '../config/auth.storage';
+import { api } from './http';
 
 import type {
   SecretSantaAssignment,
-  SecretSantaAssignmentWithUsers,
   SecretSantaSummaryItem,
+  SecretSantaDrawResponse,
+  SecretSantaPrivateAssignment,
 } from '../types/secret_santa_assignments.schema';
 
-const API_URL = 'http://localhost:3000';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const token = authStorage.getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
 
 export const drawSecretSantaAssignments = async (
   eventId: string,
-): Promise<SecretSantaAssignment[]> => {
-  const response = await api.post<SecretSantaAssignment[]>(
+): Promise<SecretSantaDrawResponse> => {
+  const response = await api.post<SecretSantaDrawResponse>(
     `/secret-santa-assignments/event/${eventId}/draw`,
   );
 
@@ -38,9 +21,9 @@ export const drawSecretSantaAssignments = async (
 
 export const getMySecretSantaAssignment = async (
   eventId: string,
-): Promise<SecretSantaAssignmentWithUsers> => {
+): Promise<SecretSantaPrivateAssignment> => {
   const response =
-    await api.get<SecretSantaAssignmentWithUsers>(
+    await api.get<SecretSantaPrivateAssignment>(
       `/secret-santa-assignments/event/${eventId}/me`,
     );
 
@@ -49,8 +32,8 @@ export const getMySecretSantaAssignment = async (
 
 export const markGiftAsDelivered = async (
   eventId: string,
-): Promise<SecretSantaAssignment> => {
-  const response = await api.patch<SecretSantaAssignment>(
+): Promise<{ message: string; assignment: SecretSantaAssignment; eventCompleted: boolean }> => {
+  const response = await api.patch<{ message: string; assignment: SecretSantaAssignment; eventCompleted: boolean }>(
     `/secret-santa-assignments/event/${eventId}/delivered`,
   );
 
@@ -67,3 +50,38 @@ export const getSecretSantaAssignmentSummary = async (
 
   return response.data;
 };
+export async function getGuestAssignment(eventId: string, token: string): Promise<SecretSantaPrivateAssignment> {
+  return (await api.get<SecretSantaPrivateAssignment>(`/secret-santa-guests/event/${eventId}/me`, { headers: { 'x-guest-token': token } })).data;
+}
+export async function markGuestGiftDelivered(eventId: string, token: string): Promise<unknown> {
+  return (await api.patch(`/secret-santa-guests/event/${eventId}/delivered`, {}, { headers: { 'x-guest-token': token } })).data;
+}
+
+export interface OrganizerAssignment {
+  id: string;
+  giverMemberId: string | null;
+  giverName: string;
+  receiverMemberId: string | null;
+  receiverName: string;
+  giftStatus: 'pending' | 'delivered';
+  deliveredAt: string | null;
+}
+
+export interface OrganizerAssignmentsResponse {
+  eventId: string;
+  eventName: string;
+  groupId: string;
+  total: number;
+  delivered: number;
+  assignments: OrganizerAssignment[];
+}
+
+export async function getOrganizerAssignments(
+  eventId: string,
+): Promise<OrganizerAssignmentsResponse> {
+  const response = await api.get<OrganizerAssignmentsResponse>(
+    `/secret-santa-assignments/event/${eventId}/organizer-assignments`,
+  );
+
+  return response.data;
+}

@@ -32,11 +32,6 @@ export class UpdateWishlistItemDto {
   productUrl?: string;
 
   @IsOptional()
-  @IsUrl()
-  @MaxLength(1000)
-  imageUrl?: string;
-
-  @IsOptional()
   @IsNumberString()
   estimatedPrice?: string;
 

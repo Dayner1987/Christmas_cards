@@ -30,11 +30,6 @@ export class CreateWishlistItemDto {
   productUrl?: string;
 
   @IsOptional()
-  @IsUrl()
-  @MaxLength(1000)
-  imageUrl?: string;
-
-  @IsOptional()
   @IsNumberString()
   estimatedPrice?: string;
 

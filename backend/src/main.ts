@@ -34,6 +34,7 @@ async function bootstrap() {
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'x-guest-token',
     ],
     credentials: true,
   });

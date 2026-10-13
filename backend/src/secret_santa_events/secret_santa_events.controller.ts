@@ -1,6 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
+  UploadedFile,
+  UseInterceptors,
   Get,
   Param,
   ParseUUIDPipe,
@@ -9,6 +12,9 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageUploadOptions } from '../cloudinary/image-upload.options';
 
 import {
   Request,
@@ -93,6 +99,19 @@ export class SecretSantaEventsController {
       groupId,
       request.user.sub,
     );
+  }
+
+  @Post(':id/image')
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
+  uploadImage(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) { return this.eventsService.uploadImage(id, request.user.sub, file); }
+
+  @Delete(':id/image')
+  deleteImage(@Req() request: AuthenticatedRequest, @Param('id', ParseUUIDPipe) id: string) {
+    return this.eventsService.deleteImage(id, request.user.sub);
   }
 
   // PATCH /secret-santa-events/:id/cancel

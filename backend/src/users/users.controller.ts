@@ -94,6 +94,26 @@ export class UsersController {
     return this.usersService.removeAvatar(user.id);
   }
 
+  @Post(':id/avatar')
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
+  async uploadUserAvatar(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
+    await this.requireAdmin(request);
+    return this.usersService.updateAvatar(id, file);
+  }
+
+  @Delete(':id/avatar')
+  async removeUserAvatar(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    await this.requireAdmin(request);
+    return this.usersService.removeAvatar(id);
+  }
+
   @Post()
   async create(
     @Req() request: AuthenticatedRequest,

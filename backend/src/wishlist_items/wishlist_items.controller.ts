@@ -7,8 +7,13 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFile,
+  UseInterceptors,
   UseGuards,
 } from '@nestjs/common';
+
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageUploadOptions } from '../cloudinary/image-upload.options';
 
 import {
   JwtAuthGuard,
@@ -107,6 +112,27 @@ export class WishlistItemsController {
       dto,
     );
   }
+
+  @Post(':itemId/image')
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
+  uploadImage(
+    @Param('wishlistId') wishlistId: string,
+    @Param('itemId') itemId: string,
+    @Req() request: any,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
+    return this.wishlistItemsService.uploadImage(wishlistId, itemId, request.user.sub, file);
+  }
+
+  @Delete(':itemId/image')
+  deleteImage(
+    @Param('wishlistId') wishlistId: string,
+    @Param('itemId') itemId: string,
+    @Req() request: any,
+  ) {
+    return this.wishlistItemsService.deleteImage(wishlistId, itemId, request.user.sub);
+  }
+
 
   @Delete(':itemId')
   remove(

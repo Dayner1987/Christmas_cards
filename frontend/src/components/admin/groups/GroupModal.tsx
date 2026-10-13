@@ -31,9 +31,9 @@ export default function GroupModal({
   const [form, setForm] = useState({
     name: group?.name ?? '',
     description: group?.description ?? '',
-    imageUrl: group?.imageUrl ?? '',
+    themeColor: group?.themeColor ?? '#B91C1C',
     visibility: group?.visibility ?? 'private',
-    joinMode: group?.joinMode ?? 'closed',
+    joinMode: group?.joinMode ?? 'link',
     maximumMembers: group?.maximumMembers?.toString() ?? '',
     invitationExpiresAt: toLocalInput(group?.invitationExpiresAt ?? null),
     invitationEnabled: group?.invitationEnabled ?? true,
@@ -54,20 +54,11 @@ export default function GroupModal({
       return;
     }
 
-    if (form.imageUrl.trim()) {
-      try {
-        const url = new URL(form.imageUrl.trim());
-        if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
-      } catch {
-        setError('La imagen debe tener una URL HTTP o HTTPS válida.');
-        return;
-      }
-    }
 
     const maximum = form.maximumMembers === '' ? undefined : Number(form.maximumMembers);
 
-    if (maximum !== undefined && (!Number.isSafeInteger(maximum) || maximum < 1)) {
-      setError('El máximo de miembros debe ser un número entero mayor que cero.');
+    if (maximum !== undefined && (!Number.isSafeInteger(maximum) || maximum < 2)) {
+      setError('El máximo de miembros debe ser un número entero al menos dos.');
       return;
     }
 
@@ -108,7 +99,7 @@ export default function GroupModal({
     const data: CreateGroup = {
       name: form.name.trim(),
       description: form.description.trim(),
-      imageUrl: form.imageUrl.trim(),
+      themeColor: form.themeColor,
       visibility: form.visibility,
       joinMode: form.joinMode,
       invitationEnabled: form.invitationEnabled,
@@ -120,7 +111,7 @@ export default function GroupModal({
     // En edición, una cadena vacía permite solicitar que se borre el texto.
     if (!group) {
       if (!data.description) delete data.description;
-      if (!data.imageUrl) delete data.imageUrl;
+
     }
 
     lock.current = true;
@@ -148,51 +139,50 @@ export default function GroupModal({
 
       <form onSubmit={submit}>
         <fieldset disabled={busy} className="grid min-w-0 grid-cols-1 gap-4 border-0 p-0 sm:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm font-semibold text-purple-950 sm:col-span-2">
+          <label className="flex flex-col gap-2 text-sm font-semibold text-red-950 sm:col-span-2">
             Nombre del grupo *
             <input
               autoFocus
               required
               value={form.name}
               onChange={event => setForm(current => ({ ...current, name: event.target.value }))}
-              className="min-h-11 rounded-xl border border-purple-200 bg-white px-3 py-2.5 font-normal outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+              className="min-h-11 rounded-xl border border-red-200 bg-white px-3 py-2.5 font-normal outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
             />
           </label>
 
-          <label className="flex flex-col gap-2 text-sm font-semibold text-purple-950 sm:col-span-2">
+          <label className="flex flex-col gap-2 text-sm font-semibold text-red-950 sm:col-span-2">
             Descripción
             <textarea
               rows={3}
               value={form.description}
               onChange={event => setForm(current => ({ ...current, description: event.target.value }))}
-              className="resize-y rounded-xl border border-purple-200 bg-white px-3 py-2.5 font-normal outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+              className="resize-y rounded-xl border border-red-200 bg-white px-3 py-2.5 font-normal outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100"
             />
           </label>
 
-          <label className="flex flex-col gap-2 text-sm font-semibold text-purple-950 sm:col-span-2">
-            URL de la imagen
-            <input
-              type="url"
-              placeholder="https://..."
-              value={form.imageUrl}
-              onChange={event => setForm(current => ({ ...current, imageUrl: event.target.value }))}
-              className="min-h-11 rounded-xl border border-purple-200 bg-white px-3 py-2.5 font-normal outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
-            />
+          <label className="flex flex-col gap-2 text-sm font-semibold text-red-950 sm:col-span-2">
+            Color de tu grupo
+            <div className="flex items-center gap-3">
+              <input aria-label="Color del grupo" type="color" value={form.themeColor}
+                onChange={event => setForm(current => ({ ...current, themeColor: event.target.value }))}
+                className="h-11 w-16 cursor-pointer rounded-lg" />
+              <span className="text-xs text-slate-500">Las imágenes se suben a Cloudinary después de crear el grupo.</span>
+            </div>
           </label>
 
-          <label className="flex flex-col gap-2 text-sm font-semibold text-purple-950">
+          <label className="flex flex-col gap-2 text-sm font-semibold text-red-950">
             Visibilidad
             <select
               value={form.visibility}
               onChange={event => setForm(current => ({ ...current, visibility: event.target.value as GroupVisibility }))}
-              className="min-h-11 rounded-xl border border-purple-200 bg-white px-3 font-normal outline-none focus:ring-2 focus:ring-purple-300"
+              className="min-h-11 rounded-xl border border-red-200 bg-white px-3 font-normal outline-none focus:ring-2 focus:ring-red-300"
             >
               <option value="private">Privado</option>
               <option value="public">Público</option>
             </select>
           </label>
 
-         <label className="flex flex-col gap-2 text-sm font-semibold text-purple-950">
+         <label className="flex flex-col gap-2 text-sm font-semibold text-red-950">
   Forma de ingreso
 
   <select
@@ -203,7 +193,7 @@ export default function GroupModal({
         joinMode: event.target.value as GroupJoinMode,
       }))
     }
-    className="min-h-11 rounded-xl border border-purple-200 bg-white px-3 font-normal outline-none focus:ring-2 focus:ring-purple-300"
+    className="min-h-11 rounded-xl border border-red-200 bg-white px-3 font-normal outline-none focus:ring-2 focus:ring-red-300"
   >
     <option value="closed">Cerrado</option>
     <option value="link">Mediante enlace</option>
@@ -211,7 +201,7 @@ export default function GroupModal({
   </select>
 </label>
 
-          <label className="flex flex-col gap-2 text-sm font-semibold text-purple-950">
+          <label className="flex flex-col gap-2 text-sm font-semibold text-red-950">
             Máximo de miembros
             <input
               type="number"
@@ -220,27 +210,27 @@ export default function GroupModal({
               placeholder="Sin límite configurado"
               value={form.maximumMembers}
               onChange={event => setForm(current => ({ ...current, maximumMembers: event.target.value }))}
-              className="min-h-11 min-w-0 rounded-xl border border-purple-200 px-3 py-2.5 font-normal outline-none focus:ring-2 focus:ring-purple-300"
+              className="min-h-11 min-w-0 rounded-xl border border-red-200 px-3 py-2.5 font-normal outline-none focus:ring-2 focus:ring-red-300"
             />
           </label>
 
-          <label className="flex flex-col gap-2 text-sm font-semibold text-purple-950">
+          <label className="flex flex-col gap-2 text-sm font-semibold text-red-950">
             Vencimiento de invitación
             <input
               type="datetime-local"
               value={form.invitationExpiresAt}
               onChange={event => setForm(current => ({ ...current, invitationExpiresAt: event.target.value }))}
-              className="min-h-11 min-w-0 rounded-xl border border-purple-200 px-3 py-2.5 font-normal outline-none focus:ring-2 focus:ring-purple-300"
+              className="min-h-11 min-w-0 rounded-xl border border-red-200 px-3 py-2.5 font-normal outline-none focus:ring-2 focus:ring-red-300"
             />
             <span className="text-xs font-normal text-slate-500">Hora local de este dispositivo.</span>
           </label>
 
-          <label className="flex items-center gap-3 rounded-xl bg-purple-50 p-4 text-sm font-semibold text-purple-800 sm:col-span-2">
+          <label className="flex items-center gap-3 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-800 sm:col-span-2">
             <input
               type="checkbox"
               checked={form.invitationEnabled}
               onChange={event => setForm(current => ({ ...current, invitationEnabled: event.target.checked }))}
-              className="h-5 w-5 accent-purple-700"
+              className="h-5 w-5 accent-red-700"
             />
             Invitación habilitada
           </label>
@@ -250,19 +240,19 @@ export default function GroupModal({
           <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>
         )}
 
-        <footer className="mt-6 flex flex-col-reverse gap-3 border-t border-purple-100 pt-5 sm:flex-row sm:justify-end">
+        <footer className="mt-6 flex flex-col-reverse gap-3 border-t border-red-100 pt-5 sm:flex-row sm:justify-end">
           <button
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="min-h-11 rounded-xl border border-purple-200 px-5 py-2.5 text-sm font-bold text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+            className="min-h-11 rounded-xl border border-red-200 px-5 py-2.5 text-sm font-bold text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-purple-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-purple-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:opacity-40"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-40"
           >
             {busy ? <LoaderCircle size={17} className="motion-safe:animate-spin" /> : <Save size={17} />}
             {busy ? 'Guardando…' : group ? 'Guardar cambios' : 'Crear grupo'}

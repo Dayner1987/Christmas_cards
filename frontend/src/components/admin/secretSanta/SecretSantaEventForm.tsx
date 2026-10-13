@@ -143,11 +143,11 @@ export default function SecretSantaEventForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && <ErrorNotice message={error} />}
 
-        <div className="flex items-center gap-3 rounded-2xl bg-violet-50 p-4">
-          <span className="rounded-xl bg-white p-3 text-violet-600">
+        <div className="flex items-center gap-3 rounded-2xl bg-red-50 p-4">
+          <span className="rounded-xl bg-white p-3 text-red-600">
             <Gift className="h-6 w-6" />
           </span>
-          <p className="text-sm leading-6 text-violet-800">
+          <p className="text-sm leading-6 text-red-800">
             Organiza el intercambio, define el presupuesto y prepara
             el sorteo del grupo.
           </p>
@@ -167,7 +167,7 @@ export default function SecretSantaEventForm({
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Ej. Navidad entre amigos"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
             />
           </label>
 
@@ -181,7 +181,7 @@ export default function SecretSantaEventForm({
               value={form.groupId}
               onChange={(e) => setForm({ ...form, groupId: e.target.value })}
               placeholder="ID del grupo que participará"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none read-only:bg-slate-50 read-only:text-slate-500 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none read-only:bg-slate-50 read-only:text-slate-500 focus:border-red-400 focus:ring-4 focus:ring-red-100"
             />
           </label>
 
@@ -196,7 +196,7 @@ export default function SecretSantaEventForm({
                 setForm({ ...form, description: e.target.value })
               }
               placeholder="Tema del intercambio, lugar o indicaciones..."
-              className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+              className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
             />
           </label>
 
@@ -211,7 +211,7 @@ export default function SecretSantaEventForm({
               value={form.budget}
               onChange={(e) => setForm({ ...form, budget: e.target.value })}
               placeholder="100.00"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
             />
           </label>
 
@@ -230,7 +230,7 @@ export default function SecretSantaEventForm({
                 })
               }
               placeholder="BOB"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm uppercase outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm uppercase outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
             />
           </label>
 
@@ -242,7 +242,7 @@ export default function SecretSantaEventForm({
               type="datetime-local"
               value={form.drawDate}
               onChange={(e) => setForm({ ...form, drawDate: e.target.value })}
-              className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:ring-4 focus:ring-violet-100"
+              className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:ring-4 focus:ring-red-100"
             />
           </label>
 
@@ -256,7 +256,7 @@ export default function SecretSantaEventForm({
               onChange={(e) =>
                 setForm({ ...form, giftDeliveryDate: e.target.value })
               }
-              className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:ring-4 focus:ring-violet-100"
+              className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:ring-4 focus:ring-red-100"
             />
           </label>
         </fieldset>
@@ -279,7 +279,7 @@ export default function SecretSantaEventForm({
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />

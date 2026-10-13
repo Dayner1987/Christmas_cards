@@ -182,8 +182,16 @@ export class CloudinaryService {
       );
     }
 
+    const b = file.buffer;
+    const jpeg = b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+    const png = b.length > 8 && b.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+    const webp = b.length > 12 && b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP';
     if (
-      !IMAGE_ALLOWED_MIME_TYPES.includes(file.mimetype)
+      !IMAGE_ALLOWED_MIME_TYPES.includes(file.mimetype) ||
+      !(jpeg || png || webp) ||
+      !((file.mimetype === 'image/jpeg' && jpeg) ||
+        (file.mimetype === 'image/png' && png) ||
+        (file.mimetype === 'image/webp' && webp))
     ) {
       throw new BadRequestException(
         'Solo se permiten imágenes JPG, PNG o WEBP.',

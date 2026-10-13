@@ -23,6 +23,7 @@ interface Props {
   onSave: (
     data: CreateWishlistItem,
     isReceived: boolean,
+    imageFile?: File,
   ) => Promise<void>;
 }
 
@@ -45,6 +46,7 @@ export default function WishlistItemFormModal({
   });
 
   const [error, setError] = useState('');
+  const [imageFile, setImageFile] = useState<File | undefined>();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,7 +57,6 @@ export default function WishlistItemFormModal({
 
     const name = form.name.trim();
     const productUrl = form.productUrl.trim();
-    const imageUrl = form.imageUrl.trim();
     const estimatedPrice = form.estimatedPrice.trim();
     const currencyCode = form.currencyCode.trim().toUpperCase();
     const quantity = Number(form.quantity);
@@ -87,8 +88,7 @@ export default function WishlistItemFormModal({
     }
 
     if (
-      (productUrl && !safeHttpUrl(productUrl)) ||
-      (imageUrl && !safeHttpUrl(imageUrl))
+      (productUrl && !safeHttpUrl(productUrl))
     ) {
       setError('Los enlaces deben ser URLs válidas con http o https.');
       return;
@@ -98,14 +98,13 @@ export default function WishlistItemFormModal({
       item &&
       (
         (item.productUrl && !productUrl) ||
-        (item.imageUrl && !imageUrl) ||
         (item.estimatedPrice !== null &&
           item.estimatedPrice !== '' &&
           !estimatedPrice)
       )
     ) {
       setError(
-        'Puedes reemplazar el enlace, la imagen y el precio existentes. Para quitarlos, el contrato de actualización debe admitir null.',
+        'Para quitar enlaces o precios existentes se requiere una operación específica.',
       );
       return;
     }
@@ -117,12 +116,11 @@ export default function WishlistItemFormModal({
       quantity,
       priority: form.priority,
       ...(productUrl ? { productUrl } : {}),
-      ...(imageUrl ? { imageUrl } : {}),
       ...(estimatedPrice ? { estimatedPrice } : {}),
     };
 
     try {
-      await onSave(data, form.isReceived);
+      await onSave(data, form.isReceived, imageFile);
     } catch (caught) {
       setError(getErrorMessage(caught));
     }
@@ -155,7 +153,7 @@ export default function WishlistItemFormModal({
                   setForm({ ...form, name: event.target.value })
                 }
                 placeholder="Ej. Audífonos inalámbricos"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
               />
             </label>
 
@@ -170,7 +168,7 @@ export default function WishlistItemFormModal({
                   setForm({ ...form, description: event.target.value })
                 }
                 placeholder="Color, talla, modelo o detalles..."
-                className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
               />
             </label>
 
@@ -188,7 +186,7 @@ export default function WishlistItemFormModal({
                     setForm({ ...form, estimatedPrice: event.target.value })
                   }
                   placeholder="150.00"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
                 />
               </label>
 
@@ -207,7 +205,7 @@ export default function WishlistItemFormModal({
                     })
                   }
                   placeholder="BOB"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm uppercase outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm uppercase outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
                 />
               </label>
             </div>
@@ -226,7 +224,7 @@ export default function WishlistItemFormModal({
                   onChange={(event) =>
                     setForm({ ...form, quantity: event.target.value })
                   }
-                  className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
                 />
               </label>
 
@@ -242,7 +240,7 @@ export default function WishlistItemFormModal({
                       priority: event.target.value as WishlistItemPriority,
                     })
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
                 >
                   <option value="low">Baja</option>
                   <option value="medium">Media</option>
@@ -253,42 +251,35 @@ export default function WishlistItemFormModal({
           </div>
 
           <div className="min-w-0 space-y-4">
-            <div className="aspect-video overflow-hidden rounded-2xl border border-violet-100 bg-violet-50 p-3">
+            <div className="aspect-video overflow-hidden rounded-2xl border border-red-100 bg-red-50 p-3">
               <ProductImage
                 src={form.imageUrl}
                 alt={form.name || 'Vista previa del producto'}
               />
             </div>
 
-            {[
-              { field: 'imageUrl', label: 'URL de imagen' },
-              { field: 'productUrl', label: 'Enlace del producto' },
-            ].map(({ field, label }) => (
-              <label key={field} className="block space-y-2">
-                <span className="text-sm font-semibold text-slate-700">
-                  {label}
-                </span>
-                <input
-                  type="url"
-                  value={field === 'imageUrl' ? form.imageUrl : form.productUrl}
-                  onChange={(event) =>
-                    setForm({ ...form, [field]: event.target.value })
-                  }
-                  placeholder="https://..."
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                />
-              </label>
-            ))}
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-slate-700">Foto del producto (Cloudinary)</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp"
+                onChange={event => setImageFile(event.target.files?.[0])}
+                className="block w-full rounded-xl border border-red-200 bg-white p-3 text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-red-50 file:px-3 file:py-2 file:text-red-700" />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-slate-700">Enlace del producto</span>
+              <input type="url" value={form.productUrl}
+                onChange={event => setForm({ ...form, productUrl: event.target.value })}
+                placeholder="https://..." className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100" />
+            </label>
 
             {item && (
-              <label className="flex items-center gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm font-semibold text-violet-800">
+              <label className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
                 <input
                   type="checkbox"
                   checked={form.isReceived}
                   onChange={(event) =>
                     setForm({ ...form, isReceived: event.target.checked })
                   }
-                  className="h-4 w-4 accent-violet-600"
+                  className="h-4 w-4 accent-red-600"
                 />
                 Producto recibido
               </label>
@@ -309,7 +300,7 @@ export default function WishlistItemFormModal({
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />

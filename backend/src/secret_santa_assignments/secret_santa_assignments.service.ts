@@ -16,6 +16,10 @@ import {
   Repository,
 } from 'typeorm';
 
+import { GroupMembersService } from '../group_members/group_members.service';
+import { Wishlist, WishlistStatus, WishlistVisibility } from '../wishlists/entities/wishlist.entity';
+import { WishlistItem } from '../wishlist_items/entities/wishlist_item.entity';
+
 import {
   randomInt,
 } from 'crypto';
@@ -40,6 +44,8 @@ import {
   GroupMemberRole,
   MembershipStatus,
 } from '../group_members/entities/group_member.entity';
+
+import { UserRole } from '../users/entities/user.entity';
 
 import {
   User,
@@ -66,6 +72,8 @@ export class SecretSantaAssignmentsService {
 
     private readonly dataSource:
       DataSource,
+
+    private readonly membersService: GroupMembersService,
   ) {}
 
   // =====================================================
@@ -169,30 +177,11 @@ export class SecretSantaAssignmentsService {
           );
         }
 
-        // Evitamos usuarios repetidos.
-
-        const participantIds =
-          Array.from(
-            new Set(
-              members.map(
-                (member) =>
-                  member.userId,
-              ),
-            ),
-          );
-
-        // Si por algún error el dueño no estuviera en
-        // group_members, lo incluimos automáticamente.
-
-        if (
-          !participantIds.includes(
-            group.ownerId,
-          )
-        ) {
-          participantIds.push(
-            group.ownerId,
-          );
+        // Sorteamos membresías, no cuentas: incluye invitados sin registro.
+        if (!members.some(m => m.userId === group.ownerId)) {
+          throw new BadRequestException('El propietario debe ser miembro activo antes del sorteo.');
         }
+        const participantIds = members.map(m => m.id);
 
         if (participantIds.length < 3) {
           throw new BadRequestException(
@@ -205,22 +194,18 @@ export class SecretSantaAssignmentsService {
             participantIds,
           );
 
-        const assignments =
-          participantIds.map(
-            (giverId, index) =>
-              assignmentRepository.create({
-                eventId,
-                giverId,
-                receiverId:
-                  receiverIds[index],
-                giftStatus:
-                  GiftStatus.PENDING,
-                assignedAt:
-                  new Date(),
-                deliveredAt:
-                  null,
-              }),
-          );
+        const byMemberId = new Map(members.map(m => [m.id, m]));
+        const assignments = participantIds.map((giverMemberId, index) => {
+          const receiverMemberId = receiverIds[index];
+          const giver = byMemberId.get(giverMemberId)!;
+          const receiver = byMemberId.get(receiverMemberId)!;
+          return assignmentRepository.create({
+            eventId, giverMemberId, receiverMemberId,
+            giverId: giver.userId ?? null,
+            receiverId: receiver.userId ?? null,
+            giftStatus: GiftStatus.PENDING, assignedAt: new Date(), deliveredAt: null,
+          });
+        });
 
         await assignmentRepository.save(
           assignments,
@@ -286,13 +271,13 @@ export class SecretSantaAssignmentsService {
       );
     }
 
-    const assignment =
-      await this.assignmentsRepository.findOne({
-        where: {
-          eventId,
-          giverId: userId,
-        },
-      });
+    const member = await this.dataSource.getRepository(GroupMember).findOne({
+      where: { groupId: event.groupId, userId, membershipStatus: MembershipStatus.ACTIVE },
+    });
+    if (!member) throw new ForbiddenException('No perteneces al grupo.');
+    const assignment = await this.assignmentsRepository.findOne({
+      where: [{ eventId, giverId: userId }, { eventId, giverMemberId: member.id }],
+    });
 
     if (!assignment) {
       throw new NotFoundException(
@@ -300,46 +285,7 @@ export class SecretSantaAssignmentsService {
       );
     }
 
-    // Seleccionamos únicamente datos públicos.
-    // No devolvemos contraseña, email ni teléfono.
-
-    const receiver =
-      await this.usersRepository.findOne({
-        where: {
-          id: assignment.receiverId,
-        },
-
-        select: {
-          id: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          avatarUrl: true,
-        },
-      });
-
-    if (!receiver) {
-      throw new NotFoundException(
-        'El usuario asignado ya no existe',
-      );
-    }
-
-    return {
-      id: assignment.id,
-      eventId:
-        assignment.eventId,
-
-      giftStatus:
-        assignment.giftStatus,
-
-      assignedAt:
-        assignment.assignedAt,
-
-      deliveredAt:
-        assignment.deliveredAt,
-
-      receiver,
-    };
+    return this.toPrivateAssignment(assignment);
   }
 
   // =====================================================
@@ -349,6 +295,7 @@ export class SecretSantaAssignmentsService {
   async markAsDelivered(
     eventId: string,
     userId: string,
+    guestMemberId?: string,
   ) {
     return await this.dataSource.transaction(
       async (manager) => {
@@ -362,17 +309,22 @@ export class SecretSantaAssignmentsService {
             SecretSantaEvent,
           );
 
-        const assignment =
-          await assignmentRepository.findOne({
-            where: {
-              eventId,
-              giverId: userId,
-            },
-
-            lock: {
-              mode: 'pessimistic_write',
-            },
-          });
+        const event = await eventRepository.findOne({ where: { id: eventId } });
+        if (!event) throw new NotFoundException('Evento no encontrado.');
+        if (event.status !== SecretSantaEventStatus.DRAWN) {
+          throw new BadRequestException('El evento no admite nuevas entregas.');
+        }
+        const membership = guestMemberId ? null : await manager.getRepository(GroupMember).findOne({
+          where: { userId, groupId: event.groupId, membershipStatus: MembershipStatus.ACTIVE },
+        });
+        const conditions: any[] = guestMemberId
+          ? [{ eventId, giverMemberId: guestMemberId }]
+          : [{ eventId, giverId: userId }];
+        if (membership) conditions.push({ eventId, giverMemberId: membership.id });
+        const assignment = await assignmentRepository.findOne({
+          where: conditions,
+          lock: { mode: 'pessimistic_write' },
+        });
 
         if (!assignment) {
           throw new NotFoundException(
@@ -444,6 +396,62 @@ export class SecretSantaAssignmentsService {
         };
       },
     );
+  }
+
+  async findGuestAssignment(eventId: string, guestToken: string) {
+    const guest = await this.membersService.getGuestEntityByToken(guestToken);
+    const event = await this.eventsRepository.findOne({ where: { id: eventId, groupId: guest.groupId } });
+    if (!event || ![SecretSantaEventStatus.DRAWN, SecretSantaEventStatus.COMPLETED].includes(event.status)) {
+      throw new NotFoundException('No existe un sorteo disponible para este invitado.');
+    }
+    const assignment = await this.assignmentsRepository.findOne({
+      where: { eventId, giverMemberId: guest.id },
+    });
+    if (!assignment) throw new NotFoundException('No tienes una asignación en este evento.');
+    return this.toPrivateAssignment(assignment);
+  }
+
+  async markGuestAsDelivered(eventId: string, guestToken: string) {
+    const guest = await this.membersService.getGuestEntityByToken(guestToken);
+    const event = await this.eventsRepository.findOne({ where: { id: eventId, groupId: guest.groupId } });
+    if (!event) throw new NotFoundException('Evento no encontrado.');
+    return this.markAsDelivered(eventId, '', guest.id);
+  }
+
+  private async toPrivateAssignment(assignment: SecretSantaAssignment) {
+    let receiver: { id: string; name: string; avatarUrl?: string | null; isGuest: boolean };
+    let wishlist: Array<any> = [];
+    if (assignment.receiverMemberId) {
+      const membership = await this.dataSource.getRepository(GroupMember).findOne({ where: { id: assignment.receiverMemberId } });
+      if (!membership) throw new NotFoundException('Participante no encontrado.');
+      if (membership.userId) {
+        const user = await this.usersRepository.findOne({
+          where: { id: membership.userId },
+          select: { id: true, username: true, firstName: true, lastName: true, avatarUrl: true },
+        });
+        if (!user) throw new NotFoundException('Destinatario no encontrado.');
+        receiver = { id: membership.id, name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username,
+          avatarUrl: user.avatarUrl, isGuest: false };
+        const lists = await this.dataSource.getRepository(Wishlist).find({ where: [
+          { userId: user.id, status: WishlistStatus.ACTIVE, visibility: WishlistVisibility.GROUPS },
+          { userId: user.id, status: WishlistStatus.ACTIVE, visibility: WishlistVisibility.PUBLIC },
+        ] });
+        if (lists.length) wishlist = await this.dataSource.getRepository(WishlistItem).find({
+          where: lists.map(l => ({ wishlistId: l.id })),
+        });
+      } else {
+        receiver = { id: membership.id, name: membership.guestName || 'Invitado', avatarUrl: membership.guestAvatarUrl, isGuest: true };
+        wishlist = membership.guestWishlist ?? [];
+      }
+    } else if (assignment.receiverId) {
+      const user = await this.usersRepository.findOne({ where: { id: assignment.receiverId },
+        select: { id: true, username: true, firstName: true, lastName: true, avatarUrl: true } });
+      if (!user) throw new NotFoundException('Destinatario no encontrado.');
+      receiver = { id: user.id, name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username,
+        avatarUrl: user.avatarUrl, isGuest: false };
+    } else throw new NotFoundException('Destinatario no encontrado.');
+    return { id: assignment.id, eventId: assignment.eventId, giftStatus: assignment.giftStatus,
+      assignedAt: assignment.assignedAt, deliveredAt: assignment.deliveredAt, receiver, wishlist };
   }
 
   // =====================================================
@@ -574,6 +582,129 @@ export class SecretSantaAssignmentsService {
     return values;
   }
 
+async findGuestEvents(guestToken: string) {
+  const guest =
+    await this.membersService.getGuestEntityByToken(
+      guestToken,
+    );
+
+  const events = await this.eventsRepository.find({
+    where: {
+      groupId: guest.groupId,
+      status: In([
+        SecretSantaEventStatus.DRAFT,
+        SecretSantaEventStatus.DRAWN,
+        SecretSantaEventStatus.COMPLETED,
+      ]),
+    },
+    order: {
+      createdAt: 'DESC',
+    },
+  });
+
+  return events.map((event) => ({
+    id: event.id,
+    groupId: event.groupId,
+    name: event.name,
+    description: event.description,
+    imageUrl: event.imageUrl,
+    budget: event.budget,
+    currencyCode: event.currencyCode,
+    status: event.status,
+    drawDate: event.drawDate,
+    giftDeliveryDate: event.giftDeliveryDate,
+  }));
+}
+
+async getOrganizerAssignments(
+  eventId: string,
+  requesterId: string,
+) {
+  const event = await this.eventsRepository.findOne({
+    where: { id: eventId },
+  });
+
+  if (!event) {
+    throw new NotFoundException('Evento no encontrado.');
+  }
+
+  const group = await this.dataSource
+    .getRepository(Group)
+    .findOne({
+      where: {
+        id: event.groupId,
+        status: GroupStatus.ACTIVE,
+      },
+    });
+
+  if (!group) {
+    throw new NotFoundException('Grupo no disponible.');
+  }
+
+  if (group.ownerId !== requesterId) {
+    throw new ForbiddenException(
+      'Solo el propietario puede consultar las parejas del sorteo.',
+    );
+  }
+
+  if (
+    event.status !== SecretSantaEventStatus.DRAWN &&
+    event.status !== SecretSantaEventStatus.COMPLETED
+  ) {
+    throw new BadRequestException(
+      'El sorteo todavía no se realizó.',
+    );
+  }
+
+  const assignments = await this.assignmentsRepository.find({
+    where: { eventId },
+    relations: {
+      giverMember: { user: true },
+      receiverMember: { user: true },
+    },
+    order: { assignedAt: 'ASC' },
+  });
+
+  const getName = (member: GroupMember | null): string => {
+    if (!member) return 'Participante no disponible';
+
+    if (!member.userId) {
+      return member.guestName || 'Invitado';
+    }
+
+    const person = member.user;
+
+    if (!person) return 'Usuario no disponible';
+
+    return (
+      [person.firstName, person.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim() ||
+      person.username
+    );
+  };
+
+  return {
+    eventId: event.id,
+    eventName: event.name,
+    groupId: event.groupId,
+    total: assignments.length,
+    delivered: assignments.filter(
+      (item) => item.giftStatus === GiftStatus.DELIVERED,
+    ).length,
+    assignments: assignments.map((item) => ({
+      id: item.id,
+      giverMemberId: item.giverMemberId,
+      giverName: getName(item.giverMember),
+      receiverMemberId: item.receiverMemberId,
+      receiverName: getName(item.receiverMember),
+      giftStatus: item.giftStatus,
+      deliveredAt: item.deliveredAt,
+    })),
+  };
+}
+
   // =====================================================
   // VALIDAR DUEÑO O ADMINISTRADOR
   // =====================================================
@@ -607,7 +738,8 @@ export class SecretSantaAssignmentsService {
       );
     }
 
-    if (group.ownerId === userId) {
+    const actor = await manager.getRepository(User).findOne({ where: { id: userId, status: 'active' } });
+    if (group.ownerId === userId || actor?.role === UserRole.ADMIN) {
       return group;
     }
 

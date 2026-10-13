@@ -15,13 +15,18 @@ export type JoinedBy =
 export interface GroupMember {
   id: string;
   groupId: string;
-  userId: string;
+  // La respuesta del backend envía los datos del usuario, no userId plano.
+  user?: { id: string; username: string; firstName?: string | null; lastName?: string | null; avatarUrl?: string | null } | null;
+  isGuest: boolean;
+  guestName: string | null;
+  guestAvatarUrl: string | null;
   role: GroupMemberRole;
   membershipStatus: MembershipStatus;
-  joinedBy: JoinedBy;
-  joinedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  userId?: string | null;
+  joinedBy?: JoinedBy;
+  joinedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateGroupMember {

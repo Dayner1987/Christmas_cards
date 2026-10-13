@@ -33,7 +33,7 @@ const STATUS_LABELS: Record<UserStatus, string> = {
 };
 
 const PAGE_SIZE = 10;
-const ADMIN_AVATAR_ENABLED = false;
+const ADMIN_AVATAR_ENABLED = true;
 
 const normalizeText = (value: string) =>
   value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -60,7 +60,7 @@ function Avatar({
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-violet-600 to-fuchsia-600 font-black text-white shadow-sm ${
+      className={`flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-red-600 to-rose-600 font-black text-white shadow-sm ${
         large ? 'h-24 w-24 rounded-3xl text-3xl' : 'h-11 w-11 rounded-2xl text-sm'
       }`}
     >
@@ -130,16 +130,16 @@ function ModalShell({ title, busy, children, onClose }: ModalShellProps) {
         event.preventDefault();
         if (!busy) onClose();
       }}
-      className="m-auto max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-2xl overflow-y-auto rounded-3xl border border-purple-100 bg-white p-0 text-slate-800 shadow-2xl backdrop:bg-purple-950/40 backdrop:backdrop-blur-sm"
+      className="m-auto max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-2xl overflow-y-auto rounded-3xl border border-red-100 bg-white p-0 text-slate-800 shadow-2xl backdrop:bg-red-950/40 backdrop:backdrop-blur-sm"
     >
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-purple-100 bg-white px-5 py-4 sm:px-7">
-        <h2 id={titleId} className="text-xl font-black text-purple-950">{title}</h2>
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-red-100 bg-white px-5 py-4 sm:px-7">
+        <h2 id={titleId} className="text-xl font-black text-red-950">{title}</h2>
         <button
           type="button"
           aria-label="Cerrar ventana"
           disabled={busy}
           onClick={onClose}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-purple-700 transition hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <X size={21} aria-hidden="true" />
         </button>
@@ -320,11 +320,11 @@ function ModelUser({
       </p>
 
       {user && avatarEnabled && (
-        <section aria-label="Fotografía del usuario" className="mb-6 rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
+        <section aria-label="Fotografía del usuario" className="mb-6 rounded-2xl border border-red-100 bg-red-50/60 p-4">
           <div className="flex flex-col gap-4 sm:flex-row">
             <Avatar name={getFullName(user)} src={preview || avatarUrl} large />
             <div className="min-w-0 flex-1">
-              <h3 className="font-bold text-purple-950">Fotografía de perfil</h3>
+              <h3 className="font-bold text-red-950">Fotografía de perfil</h3>
               <p className="mb-3 mt-1 text-xs text-slate-500">JPG, PNG o WEBP · Máximo 5 MB</p>
 
               <input
@@ -358,7 +358,7 @@ function ModelUser({
                   type="button"
                   disabled={disabled}
                   onClick={() => fileRef.current?.click()}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm font-bold text-purple-700 hover:bg-purple-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                 >
                   <Upload size={16} aria-hidden="true" /> Seleccionar foto
                 </button>
@@ -377,13 +377,13 @@ function ModelUser({
 
               {file && (
                 <div className="mt-3">
-                  <p className="break-all text-xs text-purple-700">{file.name} · Sin guardar</p>
+                  <p className="break-all text-xs text-red-700">{file.name} · Sin guardar</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={disabled}
                       onClick={() => void savePhoto()}
-                      className="min-h-11 rounded-xl bg-purple-700 px-3 py-2 text-sm font-bold text-white hover:bg-purple-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+                      className="min-h-11 rounded-xl bg-red-700 px-3 py-2 text-sm font-bold text-white hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                     >
                       {action === 'upload' ? 'Subiendo…' : 'Guardar fotografía'}
                     </button>
@@ -391,7 +391,7 @@ function ModelUser({
                       type="button"
                       disabled={disabled}
                       onClick={clearFile}
-                      className="min-h-11 rounded-xl px-3 py-2 text-sm font-bold text-purple-700 hover:bg-purple-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+                      className="min-h-11 rounded-xl px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                     >
                       Cancelar selección
                     </button>
@@ -409,7 +409,7 @@ function ModelUser({
                   type="button"
                   disabled={disabled}
                   onClick={() => setConfirmRemove(false)}
-                  className="min-h-11 rounded-lg bg-white px-3 text-sm font-bold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+                  className="min-h-11 rounded-lg bg-white px-3 text-sm font-bold text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
                 >
                   Conservar
                 </button>
@@ -428,7 +428,7 @@ function ModelUser({
       )}
 
       {!user && avatarEnabled && (
-        <p className="mb-5 rounded-xl bg-purple-50 p-3 text-sm text-purple-700">
+        <p className="mb-5 rounded-xl bg-red-50 p-3 text-sm text-red-700">
           Crea la cuenta y luego abre Editar para agregar su fotografía.
         </p>
       )}
@@ -449,7 +449,7 @@ function ModelUser({
             { name: 'phone', label: 'Teléfono', type: 'tel', required: false },
             { name: 'birthDate', label: 'Fecha de nacimiento', type: 'date', required: false },
           ] as const).map(field => (
-            <label key={field.name} className="flex min-w-0 flex-col gap-2 text-sm font-semibold text-purple-950">
+            <label key={field.name} className="flex min-w-0 flex-col gap-2 text-sm font-semibold text-red-950">
               {field.label}
               <input
                 autoFocus={field.name === 'username'}
@@ -458,22 +458,22 @@ function ModelUser({
                 autoComplete="off"
                 value={form[field.name]}
                 onChange={event => changeField(field.name, event.target.value)}
-                className="min-h-11 w-full min-w-0 rounded-xl border border-purple-200 bg-purple-50/30 px-3 py-2.5 font-normal text-slate-800 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:opacity-50"
+                className="min-h-11 w-full min-w-0 rounded-xl border border-red-200 bg-red-50/30 px-3 py-2.5 font-normal text-slate-800 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:opacity-50"
               />
             </label>
           ))}
 
-          <label className="flex flex-col gap-2 text-sm font-semibold text-purple-950 sm:col-span-2">
+          <label className="flex flex-col gap-2 text-sm font-semibold text-red-950 sm:col-span-2">
             Biografía
             <textarea
               rows={3}
               value={form.biography}
               onChange={event => changeField('biography', event.target.value)}
-              className="w-full resize-y rounded-xl border border-purple-200 bg-purple-50/30 px-3 py-2.5 font-normal text-slate-800 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:opacity-50"
+              className="w-full resize-y rounded-xl border border-red-200 bg-red-50/30 px-3 py-2.5 font-normal text-slate-800 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:opacity-50"
             />
           </label>
 
-          <label className="flex min-w-0 flex-col gap-2 text-sm font-semibold text-purple-950">
+          <label className="flex min-w-0 flex-col gap-2 text-sm font-semibold text-red-950">
             {user ? 'Nueva contraseña' : 'Contraseña *'}
             <span className="relative">
               <input
@@ -484,21 +484,21 @@ function ModelUser({
                 maxLength={100}
                 value={form.password}
                 onChange={event => changeField('password', event.target.value)}
-                className="min-h-11 w-full rounded-xl border border-purple-200 bg-purple-50/30 py-2.5 pl-3 pr-12 font-normal text-slate-800 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:opacity-50"
+                className="min-h-11 w-full rounded-xl border border-red-200 bg-red-50/30 py-2.5 pl-3 pr-12 font-normal text-slate-800 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:opacity-50"
               />
               <button
                 type="button"
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 aria-pressed={showPassword}
                 onClick={() => setShowPassword(current => !current)}
-                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </span>
           </label>
 
-          <label className="flex min-w-0 flex-col gap-2 text-sm font-semibold text-purple-950">
+          <label className="flex min-w-0 flex-col gap-2 text-sm font-semibold text-red-950">
             Confirmar contraseña
             <input
               required={!user || Boolean(form.password)}
@@ -507,7 +507,7 @@ function ModelUser({
               maxLength={100}
               value={form.confirmPassword}
               onChange={event => changeField('confirmPassword', event.target.value)}
-              className="min-h-11 w-full rounded-xl border border-purple-200 bg-purple-50/30 px-3 py-2.5 font-normal text-slate-800 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 disabled:opacity-50"
+              className="min-h-11 w-full rounded-xl border border-red-200 bg-red-50/30 px-3 py-2.5 font-normal text-slate-800 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-100 disabled:opacity-50"
             />
           </label>
         </fieldset>
@@ -518,19 +518,19 @@ function ModelUser({
           </p>
         )}
 
-        <footer className="mt-6 flex flex-col-reverse gap-3 border-t border-purple-100 pt-5 sm:flex-row sm:justify-end">
+        <footer className="mt-6 flex flex-col-reverse gap-3 border-t border-red-100 pt-5 sm:flex-row sm:justify-end">
           <button
             type="button"
             disabled={disabled}
             onClick={onClose}
-            className="min-h-11 rounded-xl border border-purple-200 px-5 py-2.5 text-sm font-bold text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+            className="min-h-11 rounded-xl border border-red-200 px-5 py-2.5 text-sm font-bold text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={disabled}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-purple-700 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-500/20 hover:bg-purple-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:opacity-40"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-500/20 hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-40"
           >
             {action === 'save' && <LoaderCircle size={17} className="motion-safe:animate-spin" />}
             {action === 'save' ? 'Guardando…' : user ? 'Guardar cambios' : 'Crear usuario'}
@@ -579,16 +579,16 @@ function DeleteUserModal({
       <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
         <TriangleAlert size={30} aria-hidden="true" />
       </div>
-      <h3 className="text-lg font-bold text-purple-950">¿Estás seguro de eliminar esta cuenta?</h3>
+      <h3 className="text-lg font-bold text-red-950">¿Estás seguro de eliminar esta cuenta?</h3>
       <p className="mt-2 text-sm leading-6 text-slate-500">
         Verifica que seleccionaste a la persona correcta antes de confirmar.
       </p>
-      <div className="my-5 flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50/60 p-4">
+      <div className="my-5 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50/60 p-4">
         <Avatar name={getFullName(user)} src={user.avatarUrl} />
         <div className="min-w-0">
-          <p className="break-words font-bold text-purple-950">{getFullName(user)}</p>
+          <p className="break-words font-bold text-red-950">{getFullName(user)}</p>
           <p className="break-all text-sm text-slate-500">{user.email}</p>
-          <p className="break-all text-xs text-purple-600">@{user.username}</p>
+          <p className="break-all text-xs text-red-600">@{user.username}</p>
         </div>
       </div>
       {(localError || error) && (
@@ -600,7 +600,7 @@ function DeleteUserModal({
           type="button"
           disabled={disabled}
           onClick={onClose}
-          className="min-h-11 rounded-xl border border-purple-200 px-5 py-2.5 text-sm font-bold text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:opacity-40"
+          className="min-h-11 rounded-xl border border-red-200 px-5 py-2.5 text-sm font-bold text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-40"
         >
           Cancelar
         </button>
@@ -636,9 +636,9 @@ export default function AdminUsers() {
   if (session?.role !== 'admin') {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 p-5">
-        <section className="w-full max-w-md rounded-3xl border border-purple-100 bg-white p-8 text-center shadow-2xl">
-          <ShieldCheck size={44} className="mx-auto mb-4 text-purple-600" />
-          <h1 className="text-2xl font-black text-purple-950">Acceso restringido</h1>
+        <section className="w-full max-w-md rounded-3xl border border-red-100 bg-white p-8 text-center shadow-2xl">
+          <ShieldCheck size={44} className="mx-auto mb-4 text-red-600" />
+          <h1 className="text-2xl font-black text-red-950">Acceso restringido</h1>
           <p className="mt-3 text-sm text-slate-500">Esta sección requiere una cuenta administradora.</p>
         </section>
       </main>
@@ -753,23 +753,23 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-50 px-3 py-6 sm:px-6 sm:py-8">
       {/* Luces sutiles de fondo en tono suave */}
-      <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-purple-200/40 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-32 h-96 w-96 rounded-full bg-fuchsia-200/40 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-red-200/40 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 -right-32 h-96 w-96 rounded-full bg-rose-200/40 blur-3xl" />
 
       <div className="relative mx-auto w-full max-w-7xl">
         <header className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-purple-700">
+            <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-red-700">
               <Gift size={18} aria-hidden="true" /> ChristmasCards · Administración
             </div>
-            <h1 className="text-3xl font-black tracking-tight text-purple-950 sm:text-4xl">Usuarios</h1>
-            <p className="mt-2 text-sm leading-6 text-purple-800">Gestiona las cuentas y la información de tu comunidad.</p>
+            <h1 className="text-3xl font-black tracking-tight text-red-950 sm:text-4xl">Usuarios</h1>
+            <p className="mt-2 text-sm leading-6 text-red-800">Gestiona las cuentas y la información de tu comunidad.</p>
           </div>
           <button
             type="button"
             disabled={loading || waitingForFirstLoad}
             onClick={() => openModal({ type: 'create' })}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-purple-700 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-purple-500/20 transition hover:bg-purple-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-red-700 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-red-500/20 transition hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus size={20} aria-hidden="true" /> Agregar usuario
           </button>
@@ -781,13 +781,13 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
             { label: 'Administradores', value: users.filter(user => user.role === 'admin').length, icon: ShieldCheck },
             { label: 'Cuentas activas', value: users.filter(user => user.status === 'active').length, icon: UserCheck },
           ].map(({ label, value, icon: Icon }) => (
-            <article key={label} className="flex items-center gap-4 rounded-2xl border border-purple-100 bg-white p-5 text-slate-800 shadow-sm shadow-purple-500/5">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-700">
+            <article key={label} className="flex items-center gap-4 rounded-2xl border border-red-100 bg-white p-5 text-slate-800 shadow-sm shadow-red-500/5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-700">
                 <Icon size={24} aria-hidden="true" />
               </span>
               <div className="flex flex-1 items-center justify-between gap-3 sm:block">
-                <p className="text-sm font-medium text-purple-800">{label}</p>
-                <p className="text-3xl font-black text-purple-950 sm:mt-1">{hasLoaded ? value : '—'}</p>
+                <p className="text-sm font-medium text-red-800">{label}</p>
+                <p className="text-3xl font-black text-red-950 sm:mt-1">{hasLoaded ? value : '—'}</p>
               </div>
             </article>
           ))}
@@ -823,13 +823,13 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative min-w-0 flex-1">
-              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400" />
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-red-400" />
               <input
                 type="text"
                 placeholder="Buscar por nombre, usuario, correo o teléfono..."
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-                className="min-h-11 w-full rounded-2xl border border-purple-100 bg-white pl-10 pr-8 text-sm font-medium text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
+                className="min-h-11 w-full rounded-2xl border border-red-100 bg-white pl-10 pr-8 text-sm font-medium text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
               />
               {query && (
                 <button
@@ -845,7 +845,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
             <select
               value={roleFilter}
               onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-              className="min-h-11 rounded-2xl border border-purple-100 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
+              className="min-h-11 rounded-2xl border border-red-100 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
             >
               <option value="">Todos los roles</option>
               <option value="admin">Administrador</option>
@@ -855,7 +855,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="min-h-11 rounded-2xl border border-purple-100 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
+              className="min-h-11 rounded-2xl border border-red-100 bg-white px-4 text-sm font-medium text-slate-800 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100"
             >
               <option value="">Todos los estados</option>
               <option value="active">Activo</option>
@@ -870,7 +870,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="min-h-11 rounded-2xl border border-purple-200 bg-white px-4 text-xs font-bold text-purple-700 hover:bg-purple-50"
+                className="min-h-11 rounded-2xl border border-red-200 bg-white px-4 text-xs font-bold text-red-700 hover:bg-red-50"
               >
                 Limpiar filtros
               </button>
@@ -879,7 +879,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
               type="button"
               disabled={loading}
               onClick={() => void reloadUsers()}
-              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-purple-100 bg-white px-4 text-sm font-bold text-purple-700 shadow-sm hover:bg-purple-50 disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-red-100 bg-white px-4 text-sm font-bold text-red-700 shadow-sm hover:bg-red-50 disabled:opacity-50"
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
               Actualizar
@@ -888,10 +888,10 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
         </div>
 
         {/* Tabla de Usuarios */}
-        <div className="overflow-hidden rounded-3xl border border-purple-100 bg-white shadow-xl shadow-purple-500/5">
+        <div className="overflow-hidden rounded-3xl border border-red-100 bg-white shadow-xl shadow-red-500/5">
           {waitingForFirstLoad ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <LoaderCircle size={36} className="animate-spin text-purple-600" />
+              <LoaderCircle size={36} className="animate-spin text-red-600" />
               <p className="mt-4 text-sm font-medium text-slate-600">Cargando usuarios...</p>
             </div>
           ) : listFailed ? (
@@ -902,14 +902,14 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
               <button
                 type="button"
                 onClick={() => void reloadUsers()}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-purple-700 px-4 py-2 text-sm font-bold text-white hover:bg-purple-800"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white hover:bg-red-800"
               >
                 <RefreshCw size={16} /> Reintentar
               </button>
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Users size={40} className="text-purple-300" />
+              <Users size={40} className="text-red-300" />
               <p className="mt-3 font-bold text-slate-800">No se encontraron usuarios</p>
               <p className="mt-1 text-sm text-slate-500">
                 {query || roleFilter || statusFilter
@@ -920,7 +920,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="mt-4 text-sm font-bold text-purple-700 hover:underline"
+                  className="mt-4 text-sm font-bold text-red-700 hover:underline"
                 >
                   Limpiar filtros
                 </button>
@@ -929,7 +929,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-slate-600">
-                <thead className="border-b border-purple-100 bg-purple-50/50 text-xs uppercase text-purple-900">
+                <thead className="border-b border-red-100 bg-red-50/50 text-xs uppercase text-red-900">
                   <tr>
                     <th scope="col" className="px-6 py-4 font-extrabold">Usuario</th>
                     <th scope="col" className="px-6 py-4 font-extrabold">Rol</th>
@@ -938,25 +938,25 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
                     <th scope="col" className="px-6 py-4 text-right font-extrabold">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-purple-50">
+                <tbody className="divide-y divide-red-50">
                   {visibleUsers.map((user) => {
                     const isSelf = user.id === currentUserId;
                     return (
-                      <tr key={user.id} className="transition hover:bg-purple-50/30">
+                      <tr key={user.id} className="transition hover:bg-red-50/30">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <Avatar name={getFullName(user)} src={user.avatarUrl} />
                             <div className="min-w-0">
-                              <p className="font-bold text-purple-950">
+                              <p className="font-bold text-red-950">
                                 {getFullName(user)}
                                 {isSelf && (
-                                  <span className="ml-2 rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-extrabold text-purple-800">
+                                  <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-extrabold text-red-800">
                                     Tú
                                   </span>
                                 )}
                               </p>
                               <p className="text-xs text-slate-500">{user.email}</p>
-                              <p className="text-xs text-purple-600">@{user.username}</p>
+                              <p className="text-xs text-red-600">@{user.username}</p>
                             </div>
                           </div>
                         </td>
@@ -975,7 +975,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
                               type="button"
                               onClick={() => openModal({ type: 'edit', user })}
                               aria-label={`Editar ${user.username}`}
-                              className="flex h-9 w-9 items-center justify-center rounded-xl text-purple-700 transition hover:bg-purple-100"
+                              className="flex h-9 w-9 items-center justify-center rounded-xl text-red-700 transition hover:bg-red-100"
                             >
                               <Pencil size={17} />
                             </button>
@@ -1001,7 +1001,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
 
           {/* Paginación */}
           {filteredUsers.length > 0 && (
-            <div className="flex flex-col items-center justify-between gap-4 border-t border-purple-100 px-6 py-4 sm:flex-row">
+            <div className="flex flex-col items-center justify-between gap-4 border-t border-red-100 px-6 py-4 sm:flex-row">
               <p className="text-xs font-medium text-slate-500">
                 Mostrando <span className="font-bold text-slate-700">{(currentPage - 1) * PAGE_SIZE + 1}</span> a{' '}
                 <span className="font-bold text-slate-700">
@@ -1015,19 +1015,19 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
                   type="button"
                   disabled={currentPage <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-purple-200 text-purple-700 hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-red-200 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Página anterior"
                 >
                   <ChevronLeft size={18} />
                 </button>
-                <span className="px-3 text-xs font-bold text-purple-950">
+                <span className="px-3 text-xs font-bold text-red-950">
                   {currentPage} / {pageCount}
                 </span>
                 <button
                   type="button"
                   disabled={currentPage >= pageCount}
                   onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-                  className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-purple-200 text-purple-700 hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-red-200 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Página siguiente"
                 >
                   <ChevronRight size={18} />
