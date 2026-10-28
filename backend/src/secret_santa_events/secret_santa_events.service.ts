@@ -18,6 +18,8 @@ import {
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { IMAGE_FOLDERS } from '../cloudinary/cloudinary.constants';
 import { UsersService } from '../users/users.service';
+import { SecretSantaTemplate } from './entities/secret_santa_template.entity';
+import { CreateSecretSantaTemplateDto, UpdateSecretSantaTemplateDto } from './dto/create-secret_santa_template.dto';
 import { UserRole } from '../users/entities/user.entity';
 
 import {
@@ -52,6 +54,9 @@ export class SecretSantaEventsService {
     private readonly eventsRepository:
       Repository<SecretSantaEvent>,
 
+    @InjectRepository(SecretSantaTemplate)
+    private readonly templatesRepository: Repository<SecretSantaTemplate>,
+
     @InjectRepository(Group)
     private readonly groupsRepository:
       Repository<Group>,
@@ -63,6 +68,136 @@ export class SecretSantaEventsService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly usersService: UsersService,
   ) {}
+
+  // =====================================================
+  // PLANTILLAS GLOBALES (SOLO ADMIN CREA/EDITA)
+  // El sorteo SIEMPRE se efectúa sobre una instancia por grupo.
+  // =====================================================
+
+  private async requireGlobalAdmin(userId: string) {
+    const actor = await this.usersService.findOne(userId);
+    if (actor.status !== 'active' || actor.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Solo el administrador puede gestionar eventos globales.');
+    }
+  }
+
+  async findTemplates() {
+    return this.templatesRepository.find({
+      where: { isActive: true }, order: { createdAt: 'DESC' },
+    });
+  }
+
+  async createTemplate(userId: string, dto: CreateSecretSantaTemplateDto) {
+    await this.requireGlobalAdmin(userId);
+    const template = this.templatesRepository.create({
+      creatorId: userId,
+      name: dto.name.trim(),
+      description: dto.description?.trim() || null,
+      budget: dto.budget ?? null,
+      currencyCode: dto.currencyCode ?? 'BOB',
+      isActive: true,
+    });
+    return this.templatesRepository.save(template);
+  }
+
+  async updateTemplate(id: string, userId: string, dto: UpdateSecretSantaTemplateDto) {
+    await this.requireGlobalAdmin(userId);
+    const template = await this.templatesRepository.findOne({ where: { id, isActive: true } });
+    if (!template) throw new NotFoundException('Evento global no encontrado.');
+    if (dto.name !== undefined) template.name = dto.name.trim();
+    if (dto.description !== undefined) template.description = dto.description.trim();
+    if (dto.budget !== undefined) template.budget = dto.budget;
+    if (dto.currencyCode !== undefined) template.currencyCode = dto.currencyCode;
+    return this.templatesRepository.save(template);
+  }
+
+  async deactivateTemplate(id: string, userId: string) {
+    await this.requireGlobalAdmin(userId);
+    const template = await this.templatesRepository.findOne({ where: { id, isActive: true } });
+    if (!template) throw new NotFoundException('Evento global no encontrado.');
+    template.isActive = false;
+    await this.templatesRepository.save(template);
+    return { message: 'Evento global desactivado correctamente.' };
+  }
+
+  async uploadTemplateImage(id: string, userId: string, file: Express.Multer.File | undefined) {
+    await this.requireGlobalAdmin(userId);
+    const template = await this.templatesRepository.findOne({ where: { id, isActive: true } });
+    if (!template) throw new NotFoundException('Evento global no encontrado.');
+    const uploaded = await this.cloudinaryService.uploadImage(file, IMAGE_FOLDERS.EVENTS);
+    let previous: string | null = null;
+    try {
+      const updated = await this.templatesRepository.manager.transaction(async (manager) => {
+        const repo = manager.getRepository(SecretSantaTemplate);
+        const current = await repo.findOne({ where: { id, isActive: true }, lock: { mode: 'pessimistic_write' } });
+        if (!current) throw new NotFoundException('Evento global no disponible.');
+        previous = current.imagePublicId;
+        const previousUrl = current.imageUrl;
+        current.imageUrl = uploaded.url;
+        current.imagePublicId = uploaded.publicId;
+        const saved = await repo.save(current);
+        // Actualizar las instancias que todavía heredan la portada global.
+        const instances = manager.getRepository(SecretSantaEvent).createQueryBuilder()
+          .update(SecretSantaEvent)
+          .set({ imageUrl: uploaded.url })
+          .where('source_template_id = :templateId', { templateId: id })
+          .andWhere('image_public_id IS NULL');
+        if (previousUrl === null) {
+          instances.andWhere('image_url IS NULL');
+        } else {
+          instances.andWhere('image_url = :previousUrl', { previousUrl });
+        }
+        await instances.execute();
+        return saved;
+      });
+      await this.cleanupImage(previous);
+      return updated;
+    } catch (error) {
+      await this.cleanupImage(uploaded.publicId);
+      throw error;
+    }
+  }
+
+  /** Selecciona una plantilla global y crea/reutiliza un sorteo EXCLUSIVO del grupo. */
+  async applyTemplate(groupId: string, templateId: string, userId: string) {
+    await this.validateCanManageGroup(groupId, userId);
+    const template = await this.templatesRepository.findOne({
+      where: { id: templateId, isActive: true },
+    });
+    if (!template) throw new NotFoundException('Evento global no disponible.');
+
+    return this.eventsRepository.manager.transaction(async (manager) => {
+      const groupRepo = manager.getRepository(Group);
+      const eventRepo = manager.getRepository(SecretSantaEvent);
+      const group = await groupRepo.findOne({
+        where: { id: groupId, status: GroupStatus.ACTIVE },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!group) throw new NotFoundException('El grupo no está activo.');
+      let event = await eventRepo.findOne({
+        where: { groupId, sourceTemplateId: templateId },
+        order: { createdAt: 'DESC' },
+      });
+      if (!event || event.status === SecretSantaEventStatus.CANCELLED) {
+        event = eventRepo.create({
+          groupId, creatorId: userId, sourceTemplateId: templateId,
+          name: template.name,
+          description: template.description,
+          budget: template.budget,
+          currencyCode: template.currencyCode,
+          imageUrl: template.imageUrl,
+          // No se hereda el publicId: pertenece a la plantilla y no debe eliminarse.
+          imagePublicId: null,
+          drawDate: null, giftDeliveryDate: null,
+          status: SecretSantaEventStatus.DRAFT,
+        });
+        event = await eventRepo.save(event);
+      }
+      group.selectedEventId = event.id;
+      await groupRepo.save(group);
+      return { groupId: group.id, selectedEventId: event.id, event };
+    });
+  }
 
   // =====================================================
   // CREAR EVENTO

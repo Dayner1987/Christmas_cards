@@ -79,9 +79,9 @@ export default function GroupsAdmin() {
   }
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-white">
       <AdminSidebar />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 w-full flex-1 pt-16 lg:pt-0">
         <GroupsContent />
       </div>
     </div>

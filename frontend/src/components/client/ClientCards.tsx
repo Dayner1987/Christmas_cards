@@ -707,8 +707,8 @@ export default function ClientCards({
 
           {visibleCards.map((card) => {
             const image =
-              card.previewImageUrl ||
               card.frontImageUrl ||
+              card.previewImageUrl ||
               card.backgroundImageUrl;
 
             return (

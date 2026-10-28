@@ -376,6 +376,7 @@ async getGuestByToken(token: string) {
       name: group.name,
       description: group.description,
       imageUrl: group.imageUrl,
+      selectedEventId: group.selectedEventId,
     },
 
     members: members.map((member) => ({
@@ -402,6 +403,13 @@ async getGuestByToken(token: string) {
 
   async updateGuestWishlist(token: string, items: Array<{name: string; productUrl?: string; note?: string}>) {
     const guest = await this.getGuestEntityByToken(token, false);
+    if (!Array.isArray(items) || items.length > 5) {
+      throw new BadRequestException('Se permiten como máximo cinco deseos.');
+    }
+    const normalized = items.map((item) => item.name.trim().toLocaleLowerCase());
+    if (new Set(normalized).size !== normalized.length) {
+      throw new BadRequestException('La lista contiene deseos duplicados.');
+    }
     guest.guestWishlist = items;
     await this.groupMembersRepository.save(guest);
     return this.getGuestByToken(token);

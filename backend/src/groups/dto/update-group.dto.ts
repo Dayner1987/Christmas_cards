@@ -5,6 +5,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Matches,
   Min,
@@ -16,6 +17,9 @@ import {
 } from '../entities/group.entity';
 
 export class UpdateGroupDto {
+  @IsOptional()
+  @IsUUID('4', { message: 'El evento seleccionado debe ser un UUID válido.' })
+  selectedEventId?: string | null;
   @IsOptional()
   @IsString()
   @MaxLength(120)

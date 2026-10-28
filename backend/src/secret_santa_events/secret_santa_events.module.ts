@@ -1,5 +1,6 @@
 import { Module,} from '@nestjs/common';
 import { UsersModule } from '../users/users.module';
+import { SecretSantaTemplate } from './entities/secret_santa_template.entity';
 import { TypeOrmModule, } from '@nestjs/typeorm';
 import { SecretSantaEventsService, } from './secret_santa_events.service';
 import { SecretSantaEventsController, } from './secret_santa_events.controller';
@@ -28,6 +29,7 @@ import {
   imports: [
     TypeOrmModule.forFeature([
       SecretSantaEvent,
+      SecretSantaTemplate,
       Group,
       GroupMember,
     ]),

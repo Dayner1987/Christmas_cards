@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateSecretSantaTemplateDto, UpdateSecretSantaTemplateDto } from './dto/create-secret_santa_template.dto';
 import { imageUploadOptions } from '../cloudinary/image-upload.options';
 
 import {
@@ -52,6 +53,44 @@ export class SecretSantaEventsController {
     private readonly eventsService:
       SecretSantaEventsService,
   ) {}
+
+  // EVENTOS GLOBALES: no requieren grupo y solo los administra ADMIN.
+  @Get('templates')
+  findTemplates() {
+    return this.eventsService.findTemplates();
+  }
+
+  @Post('templates')
+  createTemplate(@Req() request: AuthenticatedRequest, @Body() dto: CreateSecretSantaTemplateDto) {
+    return this.eventsService.createTemplate(request.user.sub, dto);
+  }
+
+  @Patch('templates/:id')
+  updateTemplate(@Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateSecretSantaTemplateDto) {
+    return this.eventsService.updateTemplate(id, request.user.sub, dto);
+  }
+
+  @Delete('templates/:id')
+  deleteTemplate(@Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string) {
+    return this.eventsService.deactivateTemplate(id, request.user.sub);
+  }
+
+  @Post('templates/:id/image')
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
+  uploadTemplateImage(@Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File | undefined) {
+    return this.eventsService.uploadTemplateImage(id, request.user.sub, file);
+  }
+
+  @Post('group/:groupId/from-template/:templateId')
+  applyTemplate(@Req() request: AuthenticatedRequest,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Param('templateId', ParseUUIDPipe) templateId: string) {
+    return this.eventsService.applyTemplate(groupId, templateId, request.user.sub);
+  }
 
   // POST /secret-santa-events
 

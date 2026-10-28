@@ -1,164 +1,247 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+
+ // src/components/admin/AdminSidebar.tsx
+
+import { useEffect, useState } from 'react';
 import {
-  Calendar,
+  NavLink,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
+
+import {
+  CalendarDays,
   Gift,
   Heart,
+  Home,
   LayoutDashboard,
+  Layers,
+  LogOut,
   Menu,
-  ShoppingBag,
-  Sparkles,
+  UserRoundPen,
   Users,
   X,
 } from 'lucide-react';
 
-const menuItems = [
+import MobileNavbar from './users/mobileNavbar';
+import { authStorage } from '../../config/auth.storage';
+
+const links = [
   {
-    label: 'Dashboard',
-    icon: LayoutDashboard,
+    label: 'Inicio',
     to: '/admin',
+    icon: LayoutDashboard,
     end: true,
   },
   {
     label: 'Usuarios',
-    icon: Users,
     to: '/admin/users',
+    icon: Users,
     end: false,
   },
   {
     label: 'Tarjetas',
-    icon: Gift,
     to: '/admin/cards',
+    icon: Gift,
     end: false,
   },
   {
     label: 'Grupos',
-    icon: ShoppingBag,
     to: '/admin/groups',
+    icon: Layers,
     end: false,
   },
   {
     label: 'Listas de deseos',
-    icon: Heart,
     to: '/admin/wishlists',
+    icon: Heart,
     end: false,
   },
   {
-    label: 'Eventos Navideños',
-    icon: Calendar,
+    label: 'Amigo secreto',
     to: '/admin/secret-santa',
+    icon: CalendarDays,
     end: false,
   },
 ];
 
 export default function AdminSidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [open]);
+
+  const logout = () => {
+    setOpen(false);
+
+    authStorage.clearSession();
+
+    window.dispatchEvent(
+      new Event('profile:updated'),
+    );
+
+    navigate('/login', { replace: true });
+  };
+
+  const linkClass =
+    'flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition hover:bg-white/10';
 
   return (
     <>
-      {/* 1. BARRA SUPERIOR MÓVIL */}
-      <header className="fixed top-0 left-0 right-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-red-950 px-4 backdrop-blur-md lg:hidden">
+      {/* NAVBAR MÓVIL CON PERFIL */}
+      <div className="fixed inset-x-0 top-0 z-40 lg:hidden">
+        <div className="[&>header]:pl-16">
+          <MobileNavbar
+            homePath="/admin"
+            editProfilePath="/admin/perfil/editar"
+            loginPath="/login"
+          />
+        </div>
+
+        {/* BOTÓN PARA ABRIR EL MENÚ */}
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/20 active:scale-95"
+          onClick={() => setOpen((value) => !value)}
+          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={open}
+          className="absolute left-3 top-3 z-50 grid h-10 w-10 cursor-pointer place-items-center rounded-xl bg-red-50 text-red-800 transition hover:bg-red-100"
         >
-          {isOpen ? <X size={22} /> : <Menu size={22} />}
+          {open ? <X size={22} /> : <Menu size={22} />}
         </button>
+      </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="text-right">
-            <p className="text-sm font-black tracking-tight text-white">ChristmasCards</p>
-            <p className="text-[10px] text-red-200">Panel Admin</p>
-          </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-500 shadow-md">
-            <Gift size={18} className="text-white" />
-          </div>
-        </div>
-      </header>
-
-      {/* Espaciador móvil */}
-      <div className="h-20 w-full shrink-0 lg:hidden" />
-
-      {/* 2. BACKDROP */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity lg:hidden"
-          onClick={() => setIsOpen(false)}
+      {/* FONDO OSCURO EN MÓVIL */}
+      {open && (
+        <button
+          type="button"
+          aria-label="Cerrar menú lateral"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 cursor-pointer bg-black/60 lg:hidden"
         />
       )}
 
-      {/* 3. SIDEBAR (Con scrollbar invisible) */}
+      {/* MENÚ LATERAL */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-gradient-to-b from-red-950 via-red-950 to-red-900 text-white shadow-2xl transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-64 lg:translate-x-0 lg:shadow-none ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        aria-label="Panel de administración"
+        className={`
+          fixed inset-y-0 left-0 z-50
+          flex w-64 shrink-0 flex-col
+          overflow-hidden
+          bg-gradient-to-b from-red-950 to-red-900
+          text-white shadow-xl
+          transition-transform duration-200
+          lg:sticky lg:top-0 lg:h-screen
+          lg:translate-x-0 lg:shadow-none
+          ${open ? 'translate-x-0' : '-translate-x-full'}
+        `}
       >
-        {/* Cabecera interna */}
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-rose-500 shadow-lg shadow-black/10">
-              <Gift size={22} aria-hidden="true" />
-            </div>
+        {/* LOGOTIPO */}
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-white/10 px-5">
+          <NavLink
+            to="/admin"
+            onClick={() => setOpen(false)}
+            className="flex min-w-0 items-center gap-3"
+          >
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-red-600">
+              <Gift size={21} />
+            </span>
 
-            <div>
-              <p className="font-black tracking-tight">ChristmasCards</p>
-              <span className="text-xs text-red-200">Administrador</span>
-            </div>
-          </div>
+            <span>
+              <span className="block text-sm font-black">
+                ChristmasCards
+              </span>
+
+              <span className="text-xs text-red-200">
+                Administrador
+              </span>
+            </span>
+          </NavLink>
 
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setOpen(false)}
             aria-label="Cerrar menú"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-red-200 hover:bg-white/10 hover:text-white lg:hidden"
+            className="cursor-pointer rounded-lg p-2 text-red-100 hover:bg-white/10 lg:hidden"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Navegación con Scrollbar oculta */}
-        <nav
-          aria-label="Menú de administración"
-          className="flex-1 space-y-1.5 overflow-y-auto px-4 py-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-wider text-red-300/80">
-            Principal
-          </p>
-
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={() => setIsOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-white/15 font-bold text-white shadow-sm ring-1 ring-white/15'
-                      : 'text-red-200 hover:bg-white/10 hover:text-white'
-                  }`
-                }
-              >
-                <Icon size={19} aria-hidden="true" className="shrink-0" />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
+        {/* NAVEGACIÓN */}
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-5">
+          {links.map(({ label, to, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `${linkClass} ${
+                  isActive
+                    ? 'bg-white/15 text-white'
+                    : 'text-rose-100'
+                }`
+              }
+            >
+              <Icon size={18} className="shrink-0" />
+              <span>{label}</span>
+            </NavLink>
+          ))}
         </nav>
 
-        {/* Tarjeta decorativa inferior */}
-        <div className="p-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-            <Sparkles size={20} aria-hidden="true" className="mb-2 text-rose-300" />
-            <p className="text-sm font-bold">Momentos que conectan</p>
-            <p className="mt-1 text-xs leading-relaxed text-red-200">
-              Un espacio para compartir deseos y crear recuerdos especiales.
-            </p>
-          </div>
+        {/* CUENTA Y SESIÓN */}
+        <div className="shrink-0 space-y-1 border-t border-white/10 p-3">
+          <NavLink
+            to="/admin/perfil/editar"
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              `${linkClass} ${
+                isActive
+                  ? 'bg-white/15 text-white'
+                  : 'text-rose-100'
+              }`
+            }
+          >
+            <UserRoundPen size={18} />
+            Editar mi perfil
+          </NavLink>
+
+          <NavLink
+            to="/"
+            onClick={() => setOpen(false)}
+            className={`${linkClass} text-rose-100`}
+          >
+            <Home size={18} />
+            Ver página principal
+          </NavLink>
+
+          <button
+            type="button"
+            onClick={logout}
+            className={`${linkClass} w-full text-left text-rose-100 hover:bg-red-600/50`}
+          >
+            <LogOut size={18} />
+            Cerrar sesión
+          </button>
         </div>
       </aside>
     </>

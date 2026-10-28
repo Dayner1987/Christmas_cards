@@ -602,7 +602,16 @@ async findGuestEvents(guestToken: string) {
     },
   });
 
-  return events.map((event) => ({
+  const group = await this.dataSource.getRepository(Group).findOne({
+    where: { id: guest.groupId, status: GroupStatus.ACTIVE },
+  });
+  // No mostrar una celebración cualquiera cuando existan varias.
+  // Para grupos anteriores sin selección, mantener el único evento existente.
+  const visible = group?.selectedEventId
+    ? events.filter((event) => event.id === group.selectedEventId)
+    : events.length === 1 ? events : [];
+
+  return visible.map((event) => ({
     id: event.id,
     groupId: event.groupId,
     name: event.name,

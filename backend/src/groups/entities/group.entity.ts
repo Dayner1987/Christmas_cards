@@ -85,6 +85,10 @@ export class Group {
   })
   imagePublicId: string | null;
 
+  // Evento de este grupo elegido por el organizador (no una plantilla global).
+  @Column({ name: 'selected_event_id', type: 'uuid', nullable: true })
+  selectedEventId: string | null;
+
   @Column({
     name: 'invitation_code',
     type: 'varchar',

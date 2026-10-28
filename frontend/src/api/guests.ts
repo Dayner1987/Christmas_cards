@@ -53,6 +53,7 @@ export interface GuestGroupInfo {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  selectedEventId?: string | null;
 }
 
 export type GuestRegistrationResult = AuthResponse & {

@@ -72,6 +72,16 @@ export class CardsController {
     return this.cardsService.findAllForAdmin(request.user.sub);
   }
 
+  // Endpoint simplificado: una única imagen por tarjeta.
+  @Post(':id/image')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file', imageUploadOptions))
+  uploadSingleImage(@Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File | undefined) {
+    return this.cardsService.uploadImage(id, request.user.sub, 'front', file);
+  }
+
   @Post(':id/images/:slot')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file', imageUploadOptions))

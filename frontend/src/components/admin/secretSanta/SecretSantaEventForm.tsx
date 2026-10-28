@@ -1,291 +1,129 @@
-import { useState } from 'react';
+// src/components/admin/secretSanta/SecretSantaEventForm.tsx
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Gift, Loader2, Save } from 'lucide-react';
-
+import { Gift, ImagePlus, Loader2, Save } from 'lucide-react';
+import { WishlistModal as Modal, ErrorNotice } from '../wishlists/WishlistUI';
+import { getApiError } from '../../../api/http';
 import type {
-  CreateSecretSantaEvent,
-  SecretSantaEvent,
-} from '../../../types/secret_santa_events.schema';
-
+  CreateSecretSantaTemplate, SecretSantaTemplate,
+} from '../../../types/secret_santa_templates.schema';
 import {
-  ErrorNotice,
-  getErrorMessage,
-  WishlistModal as Modal,
-} from '../wishlists/WishlistUI';
+  createSecretSantaTemplate, updateSecretSantaTemplate,
+  uploadSecretSantaTemplateImage,
+} from '../../../api/secret_santa_events';
 
 interface Props {
-  event: SecretSantaEvent | null;
-  busy: boolean;
+  template: SecretSantaTemplate | null;
   onClose: () => void;
-  onSave: (data: CreateSecretSantaEvent) => Promise<void>;
+  onSaved: () => Promise<void> | void;
 }
 
-function toLocalInput(value: string | null): string {
-  if (!value) return '';
+const control = 'w-full min-w-0 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100';
+const MAX_IMAGE = 5 * 1024 * 1024;
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return '';
-
-  const pad = (number: number) => String(number).padStart(2, '0');
-
-  return [
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
-    `${pad(date.getHours())}:${pad(date.getMinutes())}`,
-  ].join('T');
-}
-
-export default function SecretSantaEventForm({
-  event,
-  busy,
-  onClose,
-  onSave,
-}: Props) {
-  const [form, setForm] = useState({
-    groupId: event?.groupId ?? '',
-    name: event?.name ?? '',
-    description: event?.description ?? '',
-    budget: event?.budget?.toString() ?? '',
-    currencyCode: event?.currencyCode ?? 'BOB',
-    drawDate: toLocalInput(event?.drawDate ?? null),
-    giftDeliveryDate: toLocalInput(event?.giftDeliveryDate ?? null),
-  });
-
+export default function SecretSantaEventForm({ template, onClose, onSaved }: Props) {
+  const [name, setName] = useState(template?.name ?? '');
+  const [description, setDescription] = useState(template?.description ?? '');
+  const [budget, setBudget] = useState(template?.budget?.toString() ?? '');
+  const [currencyCode, setCurrencyCode] = useState(template?.currencyCode ?? 'BOB');
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (submitEvent: FormEvent<HTMLFormElement>) => {
-    submitEvent.preventDefault();
+  useEffect(() => {
+    if (!photo) { setPhotoPreview(''); return; }
+    const url = URL.createObjectURL(photo);
+    setPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photo]);
 
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (busy) return;
-
     setError('');
-
-    const groupId = form.groupId.trim();
-    const name = form.name.trim();
-    const currencyCode = form.currencyCode.trim().toUpperCase();
-    const budgetText = form.budget.trim();
-
-    if (!groupId || !name) {
-      setError('El grupo y el nombre del evento son obligatorios.');
-      return;
+    if (!name.trim()) { setError('El nombre del evento es obligatorio.'); return; }
+    const amount = budget.trim() ? Number(budget) : undefined;
+    if (amount !== undefined && (!Number.isFinite(amount) || amount < 0)) {
+      setError('El presupuesto debe ser un valor positivo.'); return;
     }
-
-    if (!/^[A-Z]{3}$/.test(currencyCode)) {
-      setError('Escribe una moneda de tres letras, por ejemplo BOB o USD.');
-      return;
+    if (photo && (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type) || photo.size > MAX_IMAGE)) {
+      setError('Utiliza una imagen JPG, PNG o WEBP de máximo 5 MB.'); return;
     }
-
-    if (
-      budgetText &&
-      (!Number.isFinite(Number(budgetText)) || Number(budgetText) < 0)
-    ) {
-      setError('El presupuesto debe ser un número mayor o igual que cero.');
-      return;
-    }
-
-    const drawDate = form.drawDate ? new Date(form.drawDate) : null;
-    const deliveryDate = form.giftDeliveryDate
-      ? new Date(form.giftDeliveryDate)
-      : null;
-
-    if (
-      (drawDate && Number.isNaN(drawDate.getTime())) ||
-      (deliveryDate && Number.isNaN(deliveryDate.getTime()))
-    ) {
-      setError('Revisa las fechas del evento.');
-      return;
-    }
-
-    if (drawDate && deliveryDate && deliveryDate < drawDate) {
-      setError('La entrega no puede ser anterior al sorteo.');
-      return;
-    }
-
-    // El contrato proporcionado no permite enviar null para borrar estos campos.
-    if (
-      event &&
-      (
-        (event.budget !== null && !budgetText) ||
-        (event.drawDate && !form.drawDate) ||
-        (event.giftDeliveryDate && !form.giftDeliveryDate)
-      )
-    ) {
-      setError(
-        'Puedes modificar el presupuesto y las fechas existentes. Para quitarlos, el contrato de actualización debe admitir null.',
-      );
-      return;
-    }
-
+    const data: CreateSecretSantaTemplate = {
+      name: name.trim(), description: description.trim(), currencyCode,
+      ...(amount !== undefined ? { budget: amount } : {}),
+    };
+    setBusy(true);
     try {
-      await onSave({
-        groupId,
-        name,
-        description: form.description.trim(),
-        currencyCode,
-        ...(budgetText ? { budget: Number(budgetText) } : {}),
-        ...(drawDate ? { drawDate: drawDate.toISOString() } : {}),
-        ...(deliveryDate
-          ? { giftDeliveryDate: deliveryDate.toISOString() }
-          : {}),
-      });
-    } catch (caught) {
-      setError(getErrorMessage(caught));
-    }
+      // Conservar el ID en caso de fallo de Cloudinary, evitando duplicados en reintentos.
+      const saved = template
+        ? await updateSecretSantaTemplate(template.id, data)
+        : draftId
+          ? await updateSecretSantaTemplate(draftId, data)
+          : await createSecretSantaTemplate(data);
+      if (!template && !draftId) setDraftId(saved.id);
+      if (photo) await uploadSecretSantaTemplateImage(saved.id, photo);
+      await onSaved();
+      onClose();
+    } catch (cause) {
+      setError(getApiError(cause));
+    } finally { setBusy(false); }
   };
 
   return (
-    <Modal
-      title={event ? 'Editar evento' : 'Crear evento de amigo secreto'}
-      busy={busy}
-      onClose={onClose}
-      wide
-    >
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <Modal title={template ? 'Editar evento global' : 'Crear evento para todos los grupos'}
+      busy={busy} onClose={onClose} wide>
+      <form onSubmit={(e) => void submit(e)} className="min-w-0 space-y-5">
         {error && <ErrorNotice message={error} />}
-
-        <div className="flex items-center gap-3 rounded-2xl bg-red-50 p-4">
-          <span className="rounded-xl bg-white p-3 text-red-600">
-            <Gift className="h-6 w-6" />
-          </span>
-          <p className="text-sm leading-6 text-red-800">
-            Organiza el intercambio, define el presupuesto y prepara
-            el sorteo del grupo.
-          </p>
+        <div className="flex gap-3 rounded-2xl bg-red-50 p-4 text-sm text-red-900">
+          <Gift size={22} className="shrink-0 text-red-600" />
+          <p>Este evento estará disponible para todos los organizadores. Cada grupo tendrá su propio sorteo. <strong>No necesitas introducir ningún ID.</strong></p>
         </div>
-
-        <fieldset
-          disabled={busy}
-          className="grid min-w-0 gap-4 disabled:opacity-60 sm:grid-cols-2"
-        >
-          <label className="block space-y-2 sm:col-span-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Nombre del evento *
-            </span>
-            <input
-              required
-              autoFocus
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Ej. Navidad entre amigos"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
-            />
+        <label className="block space-y-2 text-sm font-semibold text-slate-700">
+          <span>Nombre del evento *</span>
+          <input autoFocus required value={name} maxLength={150} onChange={(e) => setName(e.target.value)}
+            placeholder="Ej. Amigo Secreto de Navidad" className={control}/>
+        </label>
+        <label className="block space-y-2 text-sm font-semibold text-slate-700">
+          <span>Descripción</span>
+          <textarea rows={3} maxLength={500} value={description} onChange={(e) => setDescription(e.target.value)}
+            placeholder="Detalles generales de la celebración" className={`${control} resize-y`} />
+        </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="block min-w-0 space-y-2 text-sm font-semibold text-slate-700">
+            <span>Presupuesto orientativo (opcional)</span>
+            <input value={budget} onChange={(e) => setBudget(e.target.value)}
+              type="number" min="0" step="0.01" placeholder="100.00" className={control}/>
           </label>
-
-          <label className="block space-y-2 sm:col-span-2">
-            <span className="text-sm font-semibold text-slate-700">
-              ID del grupo *
-            </span>
-            <input
-              required
-              readOnly={Boolean(event)}
-              value={form.groupId}
-              onChange={(e) => setForm({ ...form, groupId: e.target.value })}
-              placeholder="ID del grupo que participará"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none read-only:bg-slate-50 read-only:text-slate-500 focus:border-red-400 focus:ring-4 focus:ring-red-100"
-            />
+          <label className="block min-w-0 space-y-2 text-sm font-semibold text-slate-700">
+            <span>Moneda</span>
+            <select value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value)} className={control}>
+              <option value="BOB">Bolivianos (BOB)</option><option value="USD">Dólares (USD)</option>
+            </select>
           </label>
-
-          <label className="block space-y-2 sm:col-span-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Descripción
-            </span>
-            <textarea
-              rows={3}
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-              placeholder="Tema del intercambio, lugar o indicaciones..."
-              className="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
-            />
+        </div>
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 sm:items-center">
+          <label className="block min-w-0 space-y-2 text-sm font-semibold text-slate-700">
+            <span>Fotografía navideña (opcional)</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+              className="block w-full min-w-0 cursor-pointer rounded-xl border border-red-200 p-3 text-xs file:mr-2 file:cursor-pointer file:rounded-lg file:border-0 file:bg-red-100 file:px-3 file:py-2 file:font-bold file:text-red-800"/>
+            <span className="block text-xs font-normal text-slate-500">Una sola imagen; se compartirá como portada del evento.</span>
           </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Presupuesto por regalo
-            </span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.budget}
-              onChange={(e) => setForm({ ...form, budget: e.target.value })}
-              placeholder="100.00"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
-            />
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Moneda *
-            </span>
-            <input
-              required
-              maxLength={3}
-              value={form.currencyCode}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  currencyCode: e.target.value.toUpperCase(),
-                })
-              }
-              placeholder="BOB"
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm uppercase outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
-            />
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Fecha prevista del sorteo
-            </span>
-            <input
-              type="datetime-local"
-              value={form.drawDate}
-              onChange={(e) => setForm({ ...form, drawDate: e.target.value })}
-              className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:ring-4 focus:ring-red-100"
-            />
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-slate-700">
-              Entrega de regalos
-            </span>
-            <input
-              type="datetime-local"
-              value={form.giftDeliveryDate}
-              onChange={(e) =>
-                setForm({ ...form, giftDeliveryDate: e.target.value })
-              }
-              className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:ring-4 focus:ring-red-100"
-            />
-          </label>
-        </fieldset>
-
-        <p className="text-xs leading-5 text-slate-500">
-          Las fechas se ingresan en tu hora local. El sorteo se ejecuta
-          al pulsar el botón de la ruleta.
-        </p>
-
-        <footer className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onClose}
-            className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
-          >
-            Cancelar
-          </button>
-
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            {busy ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
+          <div className="h-36 overflow-hidden rounded-xl bg-red-50">
+            {photoPreview || template?.imageUrl ? (
+              <img src={photoPreview || template?.imageUrl || ''} alt="Vista previa del evento" className="h-full w-full object-cover"/>
+            ) : <div className="flex h-full items-center justify-center gap-2 text-red-400"><ImagePlus size={24}/> Sin imagen</div>}
+          </div>
+        </div>
+        <footer className="flex flex-col-reverse gap-3 border-t border-red-100 pt-4 sm:flex-row sm:justify-end">
+          <button type="button" disabled={busy} onClick={onClose}
+            className="min-h-11 rounded-xl border border-slate-200 px-5 text-sm font-bold">Cancelar</button>
+          <button type="submit" disabled={busy}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-red-700 px-5 text-sm font-bold text-white hover:bg-red-800 disabled:opacity-50">
+            {busy ? <Loader2 size={17} className="animate-spin"/> : <Save size={17}/>}
             {busy ? 'Guardando...' : 'Guardar evento'}
           </button>
         </footer>

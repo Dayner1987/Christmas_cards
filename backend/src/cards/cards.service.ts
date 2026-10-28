@@ -52,7 +52,7 @@ export class CardsService {
         createCardDto.category ??
         CardCategory.CHRISTMAS,
 
-      isPublic: true,
+      isPublic: createCardDto.isPublic ?? true,
 
       isActive: true,
     });
@@ -203,18 +203,32 @@ export class CardsService {
     await this.validateOwnership(card, userId);
     const fields = this.getSlot(slot);
     const uploaded = await this.cloudinaryService.uploadImage(file, IMAGE_FOLDERS.CARDS);
-    let previous: string | null = null;
+    const previousIds = new Set<string>();
     try {
       const updated = await this.cardsRepository.manager.transaction(async manager => {
         const repo = manager.getRepository(Card);
         const current = await repo.findOne({ where: { id: cardId }, lock: { mode: 'pessimistic_write' } });
         if (!current || !current.isActive) throw new NotFoundException('Tarjeta no encontrada.');
-        previous = current[fields.id];
+        if (current[fields.id]) previousIds.add(current[fields.id]!);
+        if (slot === 'front') {
+          if (current.backgroundImagePublicId) previousIds.add(current.backgroundImagePublicId);
+          if (current.previewImagePublicId) previousIds.add(current.previewImagePublicId);
+        }
         current[fields.id] = uploaded.publicId;
         current[fields.url] = uploaded.url;
+        // La misma imagen sirve para portada, fondo y miniatura.
+        // Solo se guarda UN publicId real para evitar borrados duplicados.
+        if (slot === 'front') {
+          current.backgroundImageUrl = uploaded.url;
+          current.previewImageUrl = uploaded.url;
+          current.backgroundImagePublicId = null;
+          current.previewImagePublicId = null;
+        }
         return repo.save(current);
       });
-      await this.cleanupImage(previous);
+      for (const publicId of previousIds) {
+        if (publicId !== uploaded.publicId) await this.cleanupImage(publicId);
+      }
       return updated;
     } catch (error) {
       await this.cleanupImage(uploaded.publicId);
@@ -227,8 +241,13 @@ export class CardsService {
     await this.validateOwnership(card, userId);
     const fields = this.getSlot(slot);
     const previous = card[fields.id];
+    const removedUrl = card[fields.url];
     card[fields.url] = null;
     card[fields.id] = null;
+    if (slot === 'front') {
+      if (card.previewImageUrl === removedUrl) card.previewImageUrl = null;
+      if (card.backgroundImageUrl === removedUrl) card.backgroundImageUrl = null;
+    }
     const saved = await this.cardsRepository.save(card);
     await this.cleanupImage(previous);
     return saved;

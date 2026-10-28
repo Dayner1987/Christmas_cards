@@ -47,6 +47,9 @@ export class SecretSantaEvent {
   })
   groupId: string;
 
+  @Column({ name: 'source_template_id', type: 'uuid', nullable: true })
+  sourceTemplateId: string | null;
+
   @Column({
     name: 'id_users_creator',
     type: 'uuid',

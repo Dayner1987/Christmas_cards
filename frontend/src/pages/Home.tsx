@@ -1,735 +1,353 @@
-//src/pages/Home.tsx
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
 
+ // src/pages/Home.tsx
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-import {
-  ArrowRight,
-  Check,
-  ChevronRight,
-  Gift,
-  Heart,
-  Mail,
-  Menu,
-  PartyPopper,
-  Sparkles,
-  Stars,
-  Users,
-  X,
-} from 'lucide-react';
-
+import { ArrowRight, Gift, Menu, X, Check } from 'lucide-react';
 import { authStorage } from '../config/auth.storage';
 
-const navigation = [
-  {
-    label: 'Inicio',
-    href: '#inicio',
-  },
-  {
-    label: 'Qué puedes hacer',
-    href: '#funcionalidades',
-  },
-  {
-    label: 'Cómo funciona',
-    href: '#como-funciona',
-  },
+const menu = [
+  { label: 'Inicio', href: '#inicio' },
+  { label: 'Qué puedes hacer', href: '#funcionalidades' },
+  { label: 'Cómo funciona', href: '#como-funciona' },
 ];
+
+const photos = {
+  hero: 'https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=1200&q=85',
+  cards: 'https://images.unsplash.com/photo-1512909006721-3d6018887383?auto=format&fit=crop&w=700&q=80',
+  groups: 'https://images.unsplash.com/photo-1482517967863-00e15c9b44be?auto=format&fit=crop&w=700&q=80',
+  wishes: 'https://images.unsplash.com/photo-1543589077-47d81606c1bf?auto=format&fit=crop&w=700&q=80',
+  secret: 'https://images.unsplash.com/photo-1576919228236-a097c32a5cd4?auto=format&fit=crop&w=700&q=80',
+};
 
 const features = [
   {
-    title: 'Tarjetas con intención',
-    description:
-      'Elige una tarjeta y acompáñala con esas palabras que hacen especial un regalo.',
-    icon: Mail,
-    color: 'bg-red-100 text-red-700',
+    title: 'Tarjetas llenas de cariño',
+    text: 'Envía mensajes especiales que hagan sonreír a quienes más quieres.',
+    photo: photos.cards,
   },
   {
-    title: 'Tus personas, juntas',
-    description:
-      'Organiza grupos con familiares y amigos para compartir la emoción de estas fechas.',
-    icon: Users,
-    color: 'bg-rose-100 text-rose-700',
+    title: 'Grupos para compartir',
+    text: 'Invita a tu familia y amigos a un espacio para celebrar juntos.',
+    photo: photos.groups,
   },
   {
-    title: 'Deseos para compartir',
-    description:
-      'Crea tu lista de deseos y descubre pequeños detalles que alegrarían a los demás.',
-    icon: Heart,
-    color: 'bg-red-100 text-red-700',
+    title: 'Listas de deseos',
+    text: 'Comparte tus ideas de regalo para que cada detalle sea acertado.',
+    photo: photos.wishes,
   },
   {
-    title: 'Un amigo secreto',
-    description:
-      'Organiza el intercambio de regalos de tu grupo y disfruta de preparar una sorpresa.',
-    icon: Gift,
-    color: 'bg-rose-100 text-rose-700',
+    title: 'Amigo secreto',
+    text: 'Organiza el sorteo y descubre de forma privada a quién sorprender.',
+    photo: photos.secret,
   },
 ];
-
-const steps = [
-  {
-    number: '01',
-    title: 'Crea tu cuenta',
-    description:
-      'Regístrate y personaliza tu perfil para comenzar.',
-  },
-  {
-    number: '02',
-    title: 'Reúne a tu grupo',
-    description:
-      'Invita a tus personas favoritas y compartan sus deseos.',
-  },
-  {
-    number: '03',
-    title: 'Haz sonreír a alguien',
-    description:
-      'Envía una tarjeta o prepara un regalo con significado.',
-  },
-];
-
-const primaryButton =
-  'inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-red-500/20 outline-none transition hover:from-red-700 hover:to-rose-700 focus-visible:ring-4 focus-visible:ring-red-300';
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const [session, setSession] = useState(() =>
-    authStorage.isAuthenticated()
-      ? authStorage.getUser()
-      : null,
+  const [user, setUser] = useState(() =>
+    authStorage.isAuthenticated() ? authStorage.getUser() : null,
   );
 
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
-
   useEffect(() => {
-    const refreshSession = () => {
-      setSession(
-        authStorage.isAuthenticated()
-          ? authStorage.getUser()
-          : null,
-      );
+    const refresh = () => {
+      setUser(authStorage.isAuthenticated() ? authStorage.getUser() : null);
     };
 
-    window.addEventListener('storage', refreshSession);
-    window.addEventListener(
-      'profile:updated',
-      refreshSession,
-    );
+    window.addEventListener('storage', refresh);
+    window.addEventListener('profile:updated', refresh);
 
     return () => {
-      window.removeEventListener(
-        'storage',
-        refreshSession,
-      );
-
-      window.removeEventListener(
-        'profile:updated',
-        refreshSession,
-      );
+      window.removeEventListener('storage', refresh);
+      window.removeEventListener('profile:updated', refresh);
     };
   }, []);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setMenuOpen(false);
-        menuButtonRef.current?.focus();
-      }
-    };
-
-    const handleOutside = (event: PointerEvent) => {
-      if (
-        event.target instanceof Node &&
-        !headerRef.current?.contains(event.target)
-      ) {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    document.addEventListener(
-      'pointerdown',
-      handleOutside,
-    );
-
-    return () => {
-      document.removeEventListener(
-        'keydown',
-        handleEscape,
-      );
-
-      document.removeEventListener(
-        'pointerdown',
-        handleOutside,
-      );
-    };
-  }, [menuOpen]);
-
-  const hasSession =
-    session?.role === 'admin' ||
-    session?.role === 'client';
-
-  const dashboardPath =
-    session?.role === 'admin' ? '/admin' : '/home';
-
-  const startPath = hasSession
-    ? dashboardPath
-    : '/register';
-
-  const closeMenu = () => setMenuOpen(false);
+  const loggedIn = user?.role === 'client' || user?.role === 'admin';
+  const panel = user?.role === 'admin' ? '/admin' : '/home';
+  const start = loggedIn ? panel : '/register';
 
   return (
-    <div className="min-h-screen bg-[#fff8f5] font-sans text-slate-800">
-      <a
-        href="#contenido"
-        className="sr-only fixed left-4 top-4 z-[60] rounded-xl bg-white px-4 py-3 font-bold text-red-800 shadow-lg focus:not-sr-only"
-      >
-        Saltar al contenido
-      </a>
-
-      {/* Navbar */}
-      <header
-        ref={headerRef}
-        className="sticky top-0 z-50 border-b border-red-100 bg-white/95 backdrop-blur-xl"
-      >
-        <div className="mx-auto flex min-h-[80px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#fff9f5] text-slate-900">
+      <header className="sticky top-0 z-50 border-b border-red-100 bg-white/95 backdrop-blur-md">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link
             to="/"
-            onClick={closeMenu}
-            aria-label="ChristmasCards, página principal"
-            className="flex min-w-0 items-center gap-2.5 rounded-xl outline-none focus-visible:ring-4 focus-visible:ring-red-200"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 font-black text-red-950"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-600 to-rose-600 text-white shadow-lg shadow-red-200">
-              <Gift size={23} aria-hidden="true" />
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-red-600 text-white">
+              <Gift size={23} />
             </span>
-
-            <span className="text-base font-black tracking-tight text-red-950 sm:text-xl">
-              ChristmasCards
-            </span>
+            <span className="text-lg">ChristmasCards</span>
           </Link>
 
           <nav
+            className="hidden items-center gap-8 lg:flex"
             aria-label="Navegación principal"
-            className="hidden items-center gap-6 lg:flex"
           >
-            {navigation.map((item) => (
+            {menu.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded-lg py-2 text-sm font-semibold text-slate-600 outline-none transition hover:text-red-700 focus-visible:ring-2 focus-visible:ring-red-300"
+                className="text-sm font-semibold text-slate-600 hover:text-red-700"
               >
                 {item.label}
               </a>
             ))}
           </nav>
 
-          <div className="hidden items-center gap-3 lg:flex">
-            {hasSession ? (
+          <div className="hidden items-center gap-4 lg:flex">
+            {!loggedIn && (
               <Link
-                to={dashboardPath}
-                className={primaryButton}
+                to="/login"
+                className="text-sm font-bold text-red-800 hover:underline"
               >
-                Ir a mi espacio
-                <ArrowRight size={17} aria-hidden="true" />
+                Iniciar sesión
               </Link>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="rounded-xl px-4 py-3 text-sm font-bold text-red-800 outline-none transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-300"
-                >
-                  Iniciar sesión
-                </Link>
-
-                <Link
-                  to="/register"
-                  className={primaryButton}
-                >
-                  Crear cuenta
-                  <ArrowRight size={17} aria-hidden="true" />
-                </Link>
-              </>
             )}
+
+            <Link
+              to={start}
+              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700"
+            >
+              {loggedIn ? 'Ir a mi espacio' : 'Crear cuenta'}
+              <ArrowRight size={17} />
+            </Link>
           </div>
 
           <button
-            ref={menuButtonRef}
             type="button"
-            aria-label={
-              menuOpen ? 'Cerrar menú' : 'Abrir menú'
-            }
+            onClick={() => setMenuOpen((value) => !value)}
             aria-expanded={menuOpen}
-            aria-controls="home-mobile-menu"
-            onClick={() =>
-              setMenuOpen((current) => !current)
-            }
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-red-100 text-red-900 outline-none transition hover:bg-red-50 focus-visible:ring-2 focus-visible:ring-red-400 lg:hidden"
+            aria-label="Abrir menú"
+            className="cursor-pointer rounded-xl p-2 text-red-800 lg:hidden"
           >
-            {menuOpen ? (
-              <X size={23} aria-hidden="true" />
-            ) : (
-              <Menu size={23} aria-hidden="true" />
-            )}
+            {menuOpen ? <X size={25} /> : <Menu size={25} />}
           </button>
         </div>
 
         {menuOpen && (
-          <nav
-            id="home-mobile-menu"
-            aria-label="Navegación móvil"
-            className="max-h-[calc(100dvh-80px)] overflow-y-auto border-t border-red-100 bg-white px-4 py-4 lg:hidden"
-          >
-            <div className="mx-auto max-w-7xl space-y-1">
-              {navigation.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeMenu}
-                  className="block rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-red-50 hover:text-red-700"
-                >
-                  {item.label}
-                </a>
-              ))}
+          <nav className="space-y-1 border-t border-red-100 bg-white px-5 py-4 lg:hidden">
+            {menu.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-lg px-3 py-3 text-sm font-semibold hover:bg-red-50"
+              >
+                {item.label}
+              </a>
+            ))}
 
-              <div className="grid gap-3 border-t border-red-100 pt-4">
-                {hasSession ? (
-                  <Link
-                    to={dashboardPath}
-                    onClick={closeMenu}
-                    className={primaryButton}
-                  >
-                    Ir a mi espacio
-                    <ArrowRight
-                      size={17}
-                      aria-hidden="true"
-                    />
-                  </Link>
-                ) : (
-                  <>
-                    <Link
-                      to="/login"
-                      onClick={closeMenu}
-                      className="rounded-xl border border-red-200 px-4 py-3 text-center text-sm font-bold text-red-800"
-                    >
-                      Iniciar sesión
-                    </Link>
+            {!loggedIn && (
+              <Link
+                to="/login"
+                className="block rounded-lg px-3 py-3 text-sm font-semibold text-red-700"
+              >
+                Iniciar sesión
+              </Link>
+            )}
 
-                    <Link
-                      to="/register"
-                      onClick={closeMenu}
-                      className={primaryButton}
-                    >
-                      Crear cuenta
-                      <ArrowRight
-                        size={17}
-                        aria-hidden="true"
-                      />
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
+            <Link
+              to={start}
+              className="block rounded-lg bg-red-600 px-3 py-3 text-center text-sm font-bold text-white"
+            >
+              {loggedIn ? 'Ir a mi espacio' : 'Crear cuenta'}
+            </Link>
           </nav>
         )}
       </header>
 
-      <main id="contenido">
-        {/* Presentación */}
+      <main>
         <section
           id="inicio"
-          className="relative scroll-mt-24 overflow-hidden bg-gradient-to-br from-red-950 via-red-900 to-rose-900"
+          className="bg-gradient-to-br from-[#55090d] via-[#870f1b] to-[#b51e34] text-white"
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-red-400/20 blur-3xl"
-          />
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -bottom-40 right-0 h-[30rem] w-[30rem] rounded-full bg-rose-400/20 blur-3xl"
-          />
-
-          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
+          <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:min-h-[610px] lg:grid-cols-2 lg:py-20">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-red-100 sm:text-sm">
-                <Sparkles
-                  size={16}
-                  className="text-rose-300"
-                  aria-hidden="true"
-                />
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold tracking-wide text-red-100">
                 Pequeños detalles, grandes sonrisas
               </span>
 
-              <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-                La Navidad se disfruta más
-                <span className="text-rose-300">
-                  {' '}juntos.
-                </span>
+              <h1 className="mt-7 max-w-xl text-4xl font-black leading-tight tracking-tight sm:text-5xl xl:text-6xl">
+                La Navidad se disfruta más{' '}
+                <span className="text-rose-300">juntos.</span>
               </h1>
 
-              <p className="mt-6 max-w-xl text-base leading-8 text-red-100 sm:text-lg">
-                Envía tarjetas, comparte deseos y organiza
-                el amigo secreto con tus personas favoritas.
-                Todo comienza con un detalle.
+              <p className="mt-6 max-w-lg text-base leading-8 text-red-100">
+                Envía tarjetas, comparte deseos y organiza el amigo secreto
+                con tus personas favoritas. Todo comienza con un detalle.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  to={startPath}
-                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-black text-red-900 shadow-xl shadow-black/10 outline-none transition hover:bg-red-50 focus-visible:ring-4 focus-visible:ring-rose-300"
+                  to={start}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-black text-red-900 transition hover:bg-rose-50"
                 >
-                  {hasSession
-                    ? 'Entrar a mi espacio'
-                    : 'Crear mi cuenta'}
-
-                  <ArrowRight
-                    size={18}
-                    aria-hidden="true"
-                  />
+                  {loggedIn ? 'Ir a mi espacio' : 'Crear mi cuenta'}
+                  <ArrowRight size={17} />
                 </Link>
 
                 <a
                   href="#como-funciona"
-                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/5 px-6 py-3.5 text-sm font-bold text-white outline-none transition hover:bg-white/10 focus-visible:ring-4 focus-visible:ring-red-300"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/20"
                 >
                   Descubre cómo funciona
-                  <ChevronRight
-                    size={18}
-                    aria-hidden="true"
-                  />
+                  <ArrowRight size={16} />
                 </a>
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs text-red-100 sm:text-sm">
+              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs text-red-100">
                 {[
                   'Tarjetas personales',
                   'Deseos compartidos',
                   'Sorpresas en grupo',
                 ].map((text) => (
-                  <span
-                    key={text}
-                    className="inline-flex items-center gap-2"
-                  >
-                    <Check
-                      size={15}
-                      aria-hidden="true"
-                      className="text-rose-300"
-                    />
+                  <span key={text} className="inline-flex items-center gap-1.5">
+                    <Check size={15} />
                     {text}
                   </span>
                 ))}
               </div>
             </div>
 
-            {/* Composición de ejemplo hecha con Tailwind */}
-            <div className="relative mx-auto w-full max-w-lg pb-6 pt-4 lg:pt-0">
-              <div
-                aria-hidden="true"
-                className="absolute inset-8 rotate-6 rounded-[2rem] border border-white/15 bg-white/10"
+            <div className="relative">
+              <div className="absolute -inset-4 rounded-[2.5rem] border border-white/10 bg-white/10 blur-sm" />
+
+              <img
+                src={photos.hero}
+                alt="Decoración navideña con luces y regalos"
+                fetchPriority="high"
+                className="relative h-[340px] w-full rounded-[2rem] object-cover shadow-2xl sm:h-[480px]"
               />
 
-              <div className="relative rounded-[2rem] border border-white/20 bg-white/10 p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
-                <div className="rounded-3xl bg-[#fffaf5] p-6 text-center sm:p-10">
-                  <div className="flex items-center justify-between text-red-400">
-                    <Stars size={23} aria-hidden="true" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-700">
-                      Un detalle para ti
-                    </span>
-                    <Sparkles size={23} aria-hidden="true" />
-                  </div>
-
-                  <div className="mx-auto mt-8 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-red-600 to-rose-500 text-white shadow-xl shadow-red-200 sm:h-28 sm:w-28">
-                    <Gift
-                      size={55}
-                      strokeWidth={1.5}
-                      aria-hidden="true"
-                    />
-                  </div>
-
-                  <p className="mt-7 text-3xl font-black tracking-tight text-red-950 sm:text-4xl">
-                    ¡Feliz Navidad!
-                  </p>
-
-                  <p className="mx-auto mt-4 max-w-xs text-sm leading-7 text-slate-600">
-                    Que nunca falten las risas, los abrazos
-                    y las personas que hacen especial tu vida.
-                  </p>
-
-                  <div className="mt-7 flex items-center justify-center gap-2 text-sm font-bold text-red-700">
-                    <Heart
-                      size={16}
-                      aria-hidden="true"
-                      className="fill-red-100"
-                    />
-                    Con mucho cariño
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center gap-3 px-1 text-white">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                    <Mail size={19} aria-hidden="true" />
-                  </span>
-
-                  <div>
-                    <p className="text-sm font-semibold">
-                      Un mensaje puede alegrar el día
-                    </p>
-                    <p className="mt-1 text-xs text-red-200">
-                      Ejemplo de una tarjeta para compartir
-                    </p>
-                  </div>
-                </div>
+              <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/25 bg-red-950/70 p-5 backdrop-blur-md">
+                <p className="text-lg font-black">
+                  Los mejores regalos se comparten
+                </p>
+                <p className="mt-1 text-sm text-red-100">
+                  Un espacio para crear recuerdos con quienes más quieres.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Funcionalidades */}
         <section
           id="funcionalidades"
-          className="scroll-mt-24 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+          className="mx-auto max-w-7xl px-5 py-20 sm:px-8"
+        >
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-red-600">
+              Todo en un solo lugar
+            </span>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-red-950 sm:text-4xl">
+              Una Navidad para recordar
+            </h2>
+            <p className="mt-4 text-slate-600">
+              Menos complicaciones, más momentos especiales.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature) => (
+              <article
+                key={feature.title}
+                className="group overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+              >
+                <img
+                  src={feature.photo}
+                  alt={feature.title}
+                  loading="lazy"
+                  className="h-48 w-full object-cover transition duration-500 group-hover:scale-105"
+                />
+                <div className="p-6">
+                  <h3 className="text-lg font-black text-red-950">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    {feature.text}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section
+          id="como-funciona"
+          className="bg-white px-5 py-20 sm:px-8"
         >
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-2xl text-center">
-              <span className="inline-flex rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-700">
-                Más que una tarjeta
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-red-600">
+                Fácil y rápido
               </span>
-
-              <h2 className="mt-4 text-3xl font-black tracking-tight text-red-950 sm:text-4xl">
-                Un lugar para compartir lo bonito.
+              <h2 className="mt-3 text-3xl font-black text-red-950 sm:text-4xl">
+                ¿Cómo funciona?
               </h2>
-
-              <p className="mt-4 text-base leading-7 text-slate-600">
-                Encuentra una forma de estar cerca, organizar
-                tus planes y sorprender a quienes quieres.
-              </p>
             </div>
 
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              {features.map((feature) => {
-                const Icon = feature.icon;
-
-                return (
-                  <article
-                    key={feature.title}
-                    className="rounded-3xl border border-red-100 bg-white p-6 shadow-sm transition hover:border-red-200 hover:shadow-lg hover:shadow-red-900/5"
-                  >
-                    <span
-                      className={`flex h-13 w-13 items-center justify-center rounded-2xl p-3 ${feature.color}`}
-                    >
-                      <Icon size={26} aria-hidden="true" />
-                    </span>
-
-                    <h3 className="mt-5 text-lg font-bold text-red-950">
-                      {feature.title}
-                    </h3>
-
-                    <p className="mt-3 text-sm leading-7 text-slate-600">
-                      {feature.description}
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Pasos */}
-        <section
-          id="como-funciona"
-          className="scroll-mt-24 border-y border-red-100 bg-red-50/70 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
-        >
-          <div className="mx-auto max-w-7xl">
-            <div className="grid items-start gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-red-600">
-                  Así de sencillo
-                </span>
-
-                <h2 className="mt-4 text-3xl font-black tracking-tight text-red-950 sm:text-4xl">
-                  De una idea a una sonrisa.
-                </h2>
-
-                <p className="mt-5 max-w-md text-base leading-8 text-slate-600">
-                  No hace falta esperar al regalo perfecto.
-                  Empieza reuniendo a tus personas favoritas
-                  y deja que los detalles hagan el resto.
-                </p>
-
-                <Link
-                  to={startPath}
-                  className={`${primaryButton} mt-7`}
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              {[
+                ['01', 'Crea tu cuenta', 'Personaliza tu perfil para empezar a compartir.'],
+                ['02', 'Invita a tu grupo', 'Reúne a tus amigos y familiares en un mismo lugar.'],
+                ['03', 'Comparte la sorpresa', 'Prepara tarjetas, deseos y el sorteo de amigo secreto.'],
+              ].map(([number, title, description]) => (
+                <div
+                  key={number}
+                  className="rounded-3xl border border-red-100 bg-[#fff9f5] p-8"
                 >
-                  {hasSession ? 'Ir a mi espacio' : 'Comenzar'}
-                  <ArrowRight size={17} aria-hidden="true" />
-                </Link>
-              </div>
-
-              <div className="space-y-4">
-                {steps.map((step) => (
-                  <article
-                    key={step.number}
-                    className="flex items-start gap-4 rounded-2xl border border-red-100 bg-white p-5 sm:gap-5 sm:p-6"
-                  >
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-lg font-black text-red-700">
-                      {step.number}
-                    </span>
-
-                    <div>
-                      <h3 className="text-lg font-bold text-red-950">
-                        {step.title}
-                      </h3>
-
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        {step.description}
-                      </p>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                  <span className="text-4xl font-black text-red-200">
+                    {number}
+                  </span>
+                  <h3 className="mt-4 text-xl font-black text-red-950">
+                    {title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    {description}
+                  </p>
+                </div>
+              ))}
             </div>
-          </div>
-        </section>
 
-        {/* Invitación final */}
-        <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-gradient-to-r from-red-950 via-red-800 to-rose-800 px-6 py-12 text-center sm:px-12 sm:py-16">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl"
-            />
-
-            <div className="relative">
-              <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-rose-200">
-                <PartyPopper size={32} aria-hidden="true" />
-              </span>
-
-              <h2 className="mx-auto mt-6 max-w-2xl text-3xl font-black tracking-tight text-white sm:text-4xl">
-                Haz que esta Navidad tenga algo de ti.
-              </h2>
-
-              <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-red-100 sm:text-base">
-                Una tarjeta, un deseo, una sorpresa.
-                Elige cómo quieres empezar.
-              </p>
-
+            <div className="mt-12 text-center">
               <Link
-                to={startPath}
-                className="mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-black text-red-900 outline-none transition hover:bg-red-50 focus-visible:ring-4 focus-visible:ring-rose-300"
+                to={start}
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-7 py-3.5 font-bold text-white hover:bg-red-700"
               >
-                {hasSession
-                  ? 'Volver a mi espacio'
-                  : 'Crear mi cuenta'}
-
-                <ArrowRight size={18} aria-hidden="true" />
+                {loggedIn ? 'Continuar a mi espacio' : 'Comenzar ahora'}
+                <ArrowRight size={17} />
               </Link>
             </div>
           </div>
+        </section>
+
+        <section className="bg-gradient-to-r from-red-950 to-red-800 px-5 py-16 text-center text-white">
+          <h2 className="text-3xl font-black sm:text-4xl">
+            Los mejores momentos se viven juntos.
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-red-100">
+            Tu próxima celebración puede empezar hoy.
+          </p>
+          <Link
+            to={start}
+            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-black text-red-900 hover:bg-rose-50"
+          >
+            {loggedIn ? 'Mi espacio' : 'Crear cuenta'}
+            <ArrowRight size={17} />
+          </Link>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-red-950 px-4 pb-6 pt-12 text-red-100 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]">
-            <div>
-              <Link
-                to="/"
-                className="inline-flex items-center gap-3 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-red-300"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-500 text-white">
-                  <Gift size={22} aria-hidden="true" />
-                </span>
-
-                <span className="text-lg font-black text-white">
-                  ChristmasCards
-                </span>
-              </Link>
-
-              <p className="mt-4 max-w-sm text-sm leading-7 text-red-200">
-                Un espacio para compartir momentos especiales
-                con familia y amigos, un detalle a la vez.
-              </p>
-            </div>
-
-            <nav aria-label="Explorar">
-              <h2 className="text-sm font-bold text-white">
-                Explora
-              </h2>
-
-              <ul className="mt-4 space-y-3 text-sm">
-                {navigation.map((item) => (
-                  <li key={item.href}>
-                    <a
-                      href={item.href}
-                      className="text-red-200 transition hover:text-white"
-                    >
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <nav aria-label="Acceso a la cuenta">
-              <h2 className="text-sm font-bold text-white">
-                Tu cuenta
-              </h2>
-
-              <ul className="mt-4 space-y-3 text-sm">
-                <li>
-                  <Link
-                    to="/login"
-                    className="text-red-200 transition hover:text-white"
-                  >
-                    Iniciar sesión
-                  </Link>
-                </li>
-
-                <li>
-                  <Link
-                    to="/register"
-                    className="text-red-200 transition hover:text-white"
-                  >
-                    Crear cuenta
-                  </Link>
-                </li>
-
-                {hasSession && (
-                  <li>
-                    <Link
-                      to={dashboardPath}
-                      className="text-red-200 transition hover:text-white"
-                    >
-                      Ir a mi espacio
-                    </Link>
-                  </li>
-                )}
-              </ul>
-            </nav>
-          </div>
-
-          <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center text-xs text-red-200 sm:flex-row sm:text-left">
-            <p>
-              © {new Date().getFullYear()} ChristmasCards.
-            </p>
-
-            <p className="inline-flex items-center gap-1.5">
-              Hecho para compartir
-              <Heart
-                size={13}
-                aria-hidden="true"
-                className="text-rose-300"
-              />
-            </p>
-          </div>
+      <footer className="bg-[#3d070c] px-5 py-8 text-red-100">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
+          <p className="font-black">ChristmasCards</p>
+          <p className="text-sm">Regala momentos, comparte sonrisas.</p>
+          <p className="text-xs text-red-200">
+            © {new Date().getFullYear()} ChristmasCards
+          </p>
         </div>
       </footer>
     </div>

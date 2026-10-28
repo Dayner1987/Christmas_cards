@@ -323,7 +323,7 @@ function ModelUser({
         <section aria-label="Fotografía del usuario" className="mb-6 rounded-2xl border border-red-100 bg-red-50/60 p-4">
           <div className="flex flex-col gap-4 sm:flex-row">
             <Avatar name={getFullName(user)} src={preview || avatarUrl} large />
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 w-full flex-1 pt-16 lg:pt-0">
               <h3 className="font-bold text-red-950">Fotografía de perfil</h3>
               <p className="mb-3 mt-1 text-xs text-slate-500">JPG, PNG o WEBP · Máximo 5 MB</p>
 
@@ -646,7 +646,7 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-slate-50">
       <AdminSidebar />
 
       <div className="min-w-0 flex-1">

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
+import { SecretSantaEvent, SecretSantaEventStatus } from '../secret_santa_events/entities/secret_santa_event.entity';
 import { ConfigService } from '@nestjs/config';
 
 import {
@@ -47,6 +48,9 @@ export class GroupsService {
 
     @InjectRepository(GroupMember)
     private readonly groupMembersRepository: Repository<GroupMember>,
+
+    @InjectRepository(SecretSantaEvent)
+    private readonly eventsRepository: Repository<SecretSantaEvent>,
 
     private readonly usersService: UsersService,
 
@@ -222,8 +226,23 @@ export class GroupsService {
 
     const {
       invitationExpiresAt,
+      selectedEventId,
       ...updateData
     } = updateGroupDto;
+
+    if (selectedEventId !== undefined) {
+      if (selectedEventId === null) {
+        group.selectedEventId = null;
+      } else {
+        const event = await this.eventsRepository.findOne({
+          where: { id: selectedEventId, groupId: id },
+        });
+        if (!event || event.status === SecretSantaEventStatus.CANCELLED) {
+          throw new BadRequestException('El evento seleccionado no pertenece a este grupo o fue cancelado.');
+        }
+        group.selectedEventId = event.id;
+      }
+    }
 
     Object.assign(group, updateData);
 

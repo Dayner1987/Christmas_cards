@@ -26,6 +26,7 @@ export interface Group {
   status: GroupStatus;
   createdAt: string;
   updatedAt: string;
+  selectedEventId?: string | null;
 }
 
 export interface CreateGroup {
@@ -48,4 +49,5 @@ export interface UpdateGroup {
   maximumMembers?: number;
   invitationExpiresAt?: string;
   invitationEnabled?: boolean;
+  selectedEventId?: string | null;
 }

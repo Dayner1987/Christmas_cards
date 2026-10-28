@@ -27,7 +27,7 @@ export class GuestWishDto {
 
 export class UpdateGuestWishlistDto {
   @IsArray()
-  @ArrayMaxSize(30)
+  @ArrayMaxSize(5, { message: 'Se permiten como máximo cinco deseos.' })
   @ValidateNested({ each: true })
   @Type(() => GuestWishDto)
   items: GuestWishDto[];

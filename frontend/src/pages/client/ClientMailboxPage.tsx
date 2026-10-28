@@ -30,8 +30,8 @@ type MailboxTab = 'received' | 'sent';
 
 function getCardImage(message: UserCard) {
   return (
-    message.card?.previewImageUrl ||
     message.card?.frontImageUrl ||
+    message.card?.previewImageUrl ||
     message.card?.backgroundImageUrl ||
     null
   );

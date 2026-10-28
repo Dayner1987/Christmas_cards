@@ -1,6 +1,5 @@
 
  // src/pages/GuestDashboard.tsx
-
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -12,7 +11,6 @@ import {
   Heart,
   ImagePlus,
   Plus,
-  Sparkles,
   Trash2,
   UserPlus,
   Users,
@@ -42,8 +40,12 @@ import type {
 
 import { guestStorage } from '../config/guest.storage';
 import { getApiError } from '../api/http';
-
 import GuestRegisterForm from '../components/client/GuestRegisterForm';
+
+const MAX_WISHES = 5;
+
+const christmasPhoto =
+  'https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=1200&q=80';
 
 export default function GuestDashboard() {
   const { groupId = '' } = useParams();
@@ -51,7 +53,6 @@ export default function GuestDashboard() {
 
   const [guest, setGuest] = useState<GuestProfile | null>(null);
   const [events, setEvents] = useState<GuestEvent[]>([]);
-  const [eventId, setEventId] = useState('');
   const [wishes, setWishes] = useState<GuestWish[]>([]);
   const [newWish, setNewWish] = useState('');
 
@@ -64,9 +65,15 @@ export default function GuestDashboard() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  const selectedEvent = events.find(
-    (event) => event.id === eventId,
-  );
+  // Muestra un evento automáticamente.
+  // Prioriza uno sorteado o finalizado sobre los pendientes.
+ const selectedEventId = guest?.group?.selectedEventId;
+
+const event = selectedEventId
+  ? events.find((item) => item.id === selectedEventId)
+  : events.length === 1
+    ? events[0]
+    : undefined;
 
   useEffect(() => {
     if (!token) {
@@ -77,6 +84,8 @@ export default function GuestDashboard() {
     let active = true;
 
     const load = async () => {
+      setLoading(true);
+
       try {
         const profile = await getGuestProfile(token);
 
@@ -85,26 +94,27 @@ export default function GuestDashboard() {
         setGuest(profile);
         setWishes(profile.wishlist ?? []);
 
+        if ((profile.wishlist?.length ?? 0) > MAX_WISHES) {
+          setNotice(
+            'Tienes más de cinco deseos guardados. Elimina los adicionales antes de volver a guardar.',
+          );
+        }
+
         if (profile.status === 'active') {
-          const myEvents = await getGuestEvents(token);
+          const found = await getGuestEvents(token);
 
-          if (!active) return;
-
-          setEvents(myEvents);
-
-          const firstEvent =
-            myEvents.find(
-              (event) =>
-                event.status === 'drawn' ||
-                event.status === 'completed',
-            ) ?? myEvents[0];
-
-          setEventId(firstEvent?.id ?? '');
+          if (active) {
+            setEvents(found);
+          }
         }
       } catch (cause) {
-        if (active) setError(getApiError(cause));
+        if (active) {
+          setError(getApiError(cause));
+        }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
@@ -120,10 +130,11 @@ export default function GuestDashboard() {
 
     setBusy(true);
     setError('');
+    setNotice('');
 
     try {
       setGuest(await uploadGuestAvatar(token, file));
-      setNotice('Fotografía actualizada.');
+      setNotice('Fotografía actualizada correctamente.');
     } catch (cause) {
       setError(getApiError(cause));
     } finally {
@@ -134,18 +145,45 @@ export default function GuestDashboard() {
   const addWish = () => {
     const name = newWish.trim();
 
-    if (name.length < 2 || wishes.length >= 30) return;
+    if (wishes.length >= MAX_WISHES) {
+      setError('Puedes agregar un máximo de cinco deseos.');
+      return;
+    }
+
+    if (name.length < 2) {
+      setError('El deseo debe tener al menos dos caracteres.');
+      return;
+    }
+
+    if (
+      wishes.some(
+        (wish) => wish.name.toLowerCase() === name.toLowerCase(),
+      )
+    ) {
+      setError('Ese deseo ya está en tu lista.');
+      return;
+    }
 
     setWishes((current) => [...current, { name }]);
+
     setNewWish('');
+    setError('');
     setNotice('');
   };
 
   const saveWishes = async () => {
     if (!token || busy) return;
 
+    if (wishes.length > MAX_WISHES) {
+      setError(
+        'Elimina los deseos adicionales. Solo puedes guardar cinco.',
+      );
+      return;
+    }
+
     setBusy(true);
     setError('');
+    setNotice('');
 
     try {
       const updated = await saveGuestWishlist(token, wishes);
@@ -161,15 +199,14 @@ export default function GuestDashboard() {
   };
 
   const reveal = async () => {
-    if (!token || !eventId || busy) return;
+    if (!token || !event || busy) return;
 
     setBusy(true);
     setError('');
     setAssignment(null);
 
     try {
-      const result = await getGuestAssignment(eventId, token);
-      setAssignment(result);
+      setAssignment(await getGuestAssignment(event.id, token));
     } catch (cause) {
       setError(getApiError(cause));
     } finally {
@@ -178,13 +215,14 @@ export default function GuestDashboard() {
   };
 
   const deliver = async () => {
-    if (!token || !eventId || !assignment || busy) return;
+    if (!token || !event || !assignment || busy) return;
 
     setBusy(true);
     setError('');
+    setNotice('');
 
     try {
-      await markGuestGiftDelivered(eventId, token);
+      await markGuestGiftDelivered(event.id, token);
 
       setAssignment({
         ...assignment,
@@ -200,92 +238,98 @@ export default function GuestDashboard() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fff8f5] px-4 py-8 text-slate-900">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <main className="min-h-screen bg-[#fff8f5] pb-16 text-slate-900">
+      <div className="mx-auto max-w-5xl px-4 pt-6 sm:px-6">
         <Link
           to="/"
-          className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-red-800 hover:underline"
+          className="mb-5 inline-flex items-center gap-2 text-sm font-black text-red-800 hover:underline"
         >
           <ArrowLeft size={17} />
           ChristmasCards
         </Link>
 
         {loading && (
-          <p className="rounded-2xl bg-white p-6 text-slate-500">
+          <p className="rounded-2xl bg-white p-6 text-slate-600">
             Cargando tu grupo...
           </p>
         )}
 
         {!token && (
-          <div className="rounded-2xl border border-amber-200 bg-white p-6 text-sm text-amber-900">
-            No encontramos tu invitación guardada en este navegador.
-            Solicita al organizador un nuevo enlace para entrar.
-          </div>
+          <p
+            role="alert"
+            className="rounded-2xl bg-amber-50 p-5 text-amber-900"
+          >
+            No encontramos tu invitación en este navegador.
+            Abre nuevamente el enlace que te compartió el organizador.
+          </p>
         )}
 
         {error && (
-          <p role="alert" className="rounded-xl bg-red-100 p-4 text-sm text-red-900">
+          <p
+            role="alert"
+            className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+          >
             {error}
           </p>
         )}
 
         {notice && (
-          <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">
+          <p
+            role="status"
+            className="mb-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-900"
+          >
             {notice}
           </p>
         )}
 
         {guest && (
-          <>
+          <div className="space-y-7">
             {/* PORTADA DEL GRUPO */}
-            <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-red-950 to-red-600 text-white shadow-xl">
-              {guest.group?.imageUrl && (
-                <img
-                  src={guest.group.imageUrl}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              )}
+            <section className="relative overflow-hidden rounded-[2rem] bg-red-950 text-white shadow-xl">
+              <img
+                src={guest.group?.imageUrl || christmasPhoto}
+                alt="Portada de la celebración"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
 
-              <div className="absolute inset-0 bg-gradient-to-r from-red-950/95 via-red-900/85 to-red-800/50" />
+              <div className="absolute inset-0 bg-gradient-to-r from-red-950/95 via-red-950/80 to-red-950/30" />
 
-              <div className="relative p-7 sm:p-10">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-bold uppercase">
-                  <Sparkles size={16} />
-                  Invitado especial
+              <div className="relative max-w-2xl p-8 sm:p-12">
+                <span className="rounded-full border border-white/20 bg-white/15 px-4 py-2 text-xs font-bold uppercase">
+                  Tu celebración
                 </span>
 
-                <h1 className="mt-6 text-3xl font-black sm:text-4xl">
+                <h1 className="mt-7 text-3xl font-black sm:text-4xl">
                   ¡Hola, {guest.name}!
                 </h1>
 
-                <p className="mt-3 text-lg font-bold">
-                  {guest.group?.name || 'Mi grupo de amigos'}
+                <p className="mt-4 text-xl font-bold text-rose-100">
+                  {guest.group?.name || 'Mi grupo'}
                 </p>
 
-                <p className="mt-2 max-w-xl text-sm leading-7 text-red-100">
+                <p className="mt-3 max-w-lg text-sm leading-7 text-red-100">
                   {guest.group?.description ||
-                    'Celebremos juntos y compartamos nuestros mejores deseos.'}
+                    'Comparte tus deseos y disfruta de una Navidad especial.'}
                 </p>
               </div>
             </section>
 
-            {/* MI PERFIL */}
-            <section className="flex flex-wrap items-center gap-5 rounded-3xl border border-red-100 bg-white p-6 shadow-sm">
+            {/* PERFIL */}
+            <section className="flex flex-wrap items-center gap-4 rounded-3xl border border-red-100 bg-white p-6 shadow-sm">
               {guest.avatarUrl ? (
                 <img
                   src={guest.avatarUrl}
                   alt={guest.name}
-                  className="h-20 w-20 rounded-2xl object-cover"
+                  className="h-16 w-16 rounded-2xl object-cover"
                 />
               ) : (
-                <span className="grid h-20 w-20 place-items-center rounded-2xl bg-red-100 text-red-700">
-                  <Users size={33} />
+                <span className="grid h-16 w-16 place-items-center rounded-2xl bg-red-100 text-2xl font-black text-red-700">
+                  {guest.name.charAt(0).toUpperCase()}
                 </span>
               )}
 
               <div className="min-w-0 flex-1">
-                <h2 className="text-xl font-black text-red-950">
+                <h2 className="font-black text-red-950">
                   {guest.name}
                 </h2>
 
@@ -302,21 +346,21 @@ export default function GuestDashboard() {
 
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/png,image/jpeg,image/webp"
                   disabled={busy}
                   className="sr-only"
-                  onChange={(event) => {
-                    void uploadAvatar(event.target.files?.[0]);
-                    event.target.value = '';
+                  onChange={(e) => {
+                    void uploadAvatar(e.target.files?.[0]);
+                    e.target.value = '';
                   }}
                 />
               </label>
             </section>
 
-            {/* AMIGOS DEL GRUPO */}
-            <section className="rounded-3xl border border-red-100 bg-white p-6 shadow-sm">
+            {/* MIEMBROS */}
+            <section className="rounded-3xl border border-red-100 bg-white p-6 shadow-sm sm:p-8">
               <h2 className="flex items-center gap-2 text-xl font-black text-red-950">
-                <Users className="text-red-600" size={23} />
+                <Users size={22} className="text-red-600" />
                 Nuestro grupo
               </h2>
 
@@ -328,7 +372,7 @@ export default function GuestDashboard() {
                 {(guest.members ?? []).map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 rounded-2xl border border-red-100 p-3"
+                    className="flex items-center gap-3 rounded-xl border border-red-100 p-3"
                   >
                     {member.avatarUrl ? (
                       <img
@@ -337,7 +381,7 @@ export default function GuestDashboard() {
                         className="h-12 w-12 rounded-full object-cover"
                       />
                     ) : (
-                      <span className="grid h-12 w-12 place-items-center rounded-full bg-red-100 font-black text-red-700">
+                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-red-100 font-black text-red-700">
                         {member.name.charAt(0).toUpperCase()}
                       </span>
                     )}
@@ -346,6 +390,7 @@ export default function GuestDashboard() {
                       <p className="truncate text-sm font-bold text-red-950">
                         {member.name}
                       </p>
+
                       <p className="text-xs text-slate-500">
                         {member.role === 'owner'
                           ? 'Organizador'
@@ -360,39 +405,54 @@ export default function GuestDashboard() {
             </section>
 
             {/* LISTA DE DESEOS */}
-            <section className="rounded-3xl border border-red-100 bg-white p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-xl font-black text-red-950">
-                <Heart className="text-red-600" size={23} />
-                Mi lista de deseos
-              </h2>
+            <section className="rounded-3xl border border-red-100 bg-white p-6 shadow-sm sm:p-8">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="flex items-center gap-2 text-xl font-black text-red-950">
+                    <Heart size={22} className="text-red-600" />
+                    Mi lista de deseos
+                  </h2>
 
-              <p className="mt-2 text-sm text-slate-500">
-                ¿Qué te gustaría recibir en esta celebración?
-              </p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Agrega hasta cinco objetos que te gustaría recibir.
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-red-50 px-4 py-2 text-sm font-black text-red-700">
+                  {wishes.length} / {MAX_WISHES} deseos
+                </span>
+              </div>
 
               <div className="mt-5 space-y-3">
+                {wishes.length === 0 && (
+                  <p className="rounded-xl bg-[#fff8f5] p-4 text-sm text-slate-500">
+                    Todavía no añadiste ningún deseo.
+                  </p>
+                )}
+
                 {wishes.map((wish, index) => (
                   <div
                     key={`${wish.name}-${index}`}
                     className="flex items-center gap-3 rounded-xl border border-red-100 p-3"
                   >
-                    <Gift size={18} className="text-red-600" />
+                    <Gift size={17} className="shrink-0 text-red-600" />
 
-                    <span className="min-w-0 flex-1 text-sm font-semibold">
+                    <span className="min-w-0 flex-1 break-words text-sm font-semibold">
                       {wish.name}
                     </span>
 
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
                         setWishes((current) =>
                           current.filter((_, i) => i !== index),
-                        )
-                      }
+                        );
+                        setNotice('');
+                      }}
                       aria-label={`Eliminar ${wish.name}`}
                       className="cursor-pointer rounded-lg p-2 text-red-700 hover:bg-red-50"
                     >
-                      <Trash2 size={17} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 ))}
@@ -400,241 +460,229 @@ export default function GuestDashboard() {
                 <div className="flex gap-2">
                   <input
                     value={newWish}
-                    onChange={(event) => setNewWish(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
+                    onChange={(e) => setNewWish(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
                         addWish();
                       }
                     }}
                     maxLength={150}
-                    placeholder="Ej. Libro, chocolate, audífonos..."
-                    className="min-h-12 min-w-0 flex-1 rounded-xl border border-red-200 px-4 outline-none focus:border-red-600"
+                    disabled={wishes.length >= MAX_WISHES}
+                    placeholder={
+                      wishes.length >= MAX_WISHES
+                        ? 'Alcanzaste el límite de cinco deseos'
+                        : 'Ej. Libro, chocolate, audífonos...'
+                    }
+                    className="min-h-12 min-w-0 flex-1 rounded-xl border border-red-200 px-4 text-sm outline-none focus:border-red-600 disabled:bg-slate-50"
                   />
 
                   <button
                     type="button"
                     onClick={addWish}
-                    disabled={wishes.length >= 30}
-                    className="grid h-12 w-12 cursor-pointer place-items-center rounded-xl bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-40"
+                    disabled={wishes.length >= MAX_WISHES}
                     aria-label="Agregar deseo"
+                    className="grid h-12 w-12 cursor-pointer place-items-center rounded-xl bg-red-100 text-red-700 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <Plus size={22} />
+                    <Plus size={21} />
                   </button>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => void saveWishes()}
-                  disabled={busy}
-                  className="min-h-12 w-full cursor-pointer rounded-xl bg-red-700 font-bold text-white transition hover:bg-red-800 disabled:opacity-50"
+                  disabled={busy || wishes.length > MAX_WISHES}
+                  className="min-h-12 w-full cursor-pointer rounded-xl bg-red-700 font-black text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Guardar mis deseos
+                  {busy ? 'Guardando...' : 'Guardar mis deseos'}
                 </button>
               </div>
             </section>
 
-            {/* EVENTOS DEL GRUPO */}
-            <section className="rounded-3xl border border-red-100 bg-white p-6 shadow-sm">
-              <h2 className="flex items-center gap-2 text-xl font-black text-red-950">
-                <CalendarHeart className="text-red-600" size={23} />
-                Nuestros eventos
-              </h2>
+            {/* EVENTO AUTOMÁTICO */}
+            <section className="overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm">
+              <div className="p-6 sm:p-8">
+                <h2 className="flex items-center gap-2 text-xl font-black text-red-950">
+                  <CalendarHeart size={22} className="text-red-600" />
+                  Nuestro Amigo Secreto
+                </h2>
 
-              <p className="mt-2 text-sm text-slate-500">
-                Selecciona una celebración para descubrir
-                a quién debes regalarle.
-              </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  La celebración aparece automáticamente cuando
+                  el organizador la prepara.
+                </p>
+              </div>
 
-              {guest.status === 'pending' && (
-                <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+              {guest.status !== 'active' ? (
+                <p className="mx-6 mb-7 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
                   Podrás participar cuando el organizador apruebe tu ingreso.
                 </p>
-              )}
+              ) : !event ? (
+                <p className="mx-6 mb-7 rounded-xl bg-red-50 p-4 text-sm text-slate-600">
+                  Tu grupo todavía no tiene un evento de Amigo Secreto.
+                </p>
+              ) : (
+                <div className="mx-6 mb-7 overflow-hidden rounded-2xl border border-red-100 sm:mx-8">
+                  <img
+                    src={event.imageUrl || christmasPhoto}
+                    alt={event.name}
+                    className="h-44 w-full object-cover sm:h-52"
+                  />
 
-              {guest.status === 'active' && (
-                <>
-                  <select
-                    value={eventId}
-                    onChange={(event) => {
-                      setEventId(event.target.value);
-                      setAssignment(null);
-                    }}
-                    className="mt-5 min-h-12 w-full cursor-pointer rounded-xl border border-red-200 bg-white px-4 outline-none focus:border-red-600"
-                  >
-                    <option value="">Selecciona un evento</option>
-
-                    {events.map((event) => (
-                      <option key={event.id} value={event.id}>
-                        {event.name} — {
-                          event.status === 'draft'
-                            ? 'Pendiente de sorteo'
-                            : event.status === 'drawn'
-                              ? 'Sorteado'
-                              : 'Finalizado'
-                        }
-                      </option>
-                    ))}
-                  </select>
-
-                  {selectedEvent && (
-                    <div className="mt-5 overflow-hidden rounded-2xl border border-red-100">
-                      {selectedEvent.imageUrl && (
-                        <img
-                          src={selectedEvent.imageUrl}
-                          alt={selectedEvent.name}
-                          className="h-40 w-full object-cover"
-                        />
-                      )}
-
-                      <div className="p-5">
-                        <h3 className="text-lg font-black text-red-950">
-                          {selectedEvent.name}
-                        </h3>
-
-                        <p className="mt-2 text-sm text-slate-500">
-                          {selectedEvent.description ||
-                            'Intercambio de regalos entre amigos.'}
-                        </p>
-
-                        {selectedEvent.budget != null && (
-                          <p className="mt-3 text-sm font-bold text-red-700">
-                            Presupuesto: Bs {selectedEvent.budget}
-                          </p>
-                        )}
-
-                        {selectedEvent.status === 'draft' ? (
-                          <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
-                            El organizador todavía no ha realizado el sorteo.
-                          </p>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => void reveal()}
-                            disabled={busy}
-                            className="mt-5 inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-red-700 px-6 font-bold text-white transition hover:bg-red-800 disabled:opacity-50"
-                          >
-                            <Gift size={19} />
-                            {busy ? 'Descubriendo...' : 'Descubrir mi Amigo Secreto'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {events.length === 0 && (
-                    <p className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-slate-500">
-                      Tu grupo todavía no tiene celebraciones.
-                    </p>
-                  )}
-
-                  {assignment && (
-                    <div className="mt-6 rounded-3xl border-2 border-red-200 bg-red-50 p-6 text-center">
-                      <Sparkles size={30} className="mx-auto text-red-600" />
-
-                      <p className="mt-3 text-sm font-bold uppercase text-red-700">
-                        Tu persona especial es
-                      </p>
-
-                      {assignment.receiver.avatarUrl && (
-                        <img
-                          src={assignment.receiver.avatarUrl}
-                          alt={assignment.receiver.name}
-                          className="mx-auto mt-5 h-24 w-24 rounded-full object-cover"
-                        />
-                      )}
-
-                      <h3 className="mt-3 text-3xl font-black text-red-950">
-                        {assignment.receiver.name}
+                  <div className="p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-xl font-black text-red-950">
+                        {event.name}
                       </h3>
 
-                      <div className="mt-6 rounded-2xl bg-white p-5 text-left">
-                        <h4 className="font-black text-red-950">
-                          Sus deseos
-                        </h4>
+                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-800">
+                        {event.status === 'draft'
+                          ? 'Esperando sorteo'
+                          : event.status === 'drawn'
+                            ? 'Sorteo realizado'
+                            : 'Finalizado'}
+                      </span>
+                    </div>
 
-                        {assignment.wishlist.length ? (
-                          <div className="mt-3 space-y-3">
-                            {assignment.wishlist.map((wish, index) => (
-                              <div
-                                key={index}
-                                className="rounded-xl border border-red-100 p-3"
-                              >
-                                <p className="font-semibold">{wish.name}</p>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">
+                      {event.description ||
+                        'Intercambio de regalos entre amigos.'}
+                    </p>
 
-                                {wish.productUrl && (
-                                  <a
-                                    href={wish.productUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="mt-1 inline-block cursor-pointer text-sm font-bold text-red-700 hover:underline"
-                                  >
-                                    Ver producto
-                                  </a>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="mt-2 text-sm text-slate-500">
-                            Esta persona todavía no compartió deseos.
-                          </p>
-                        )}
-                      </div>
+                    {event.budget != null && (
+                      <p className="mt-3 text-sm font-bold text-red-700">
+                        Presupuesto: {event.currencyCode || 'BOB'}{' '}
+                        {event.budget}
+                      </p>
+                    )}
 
+                    {event.status === 'draft' ? (
+                      <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
+                        El organizador todavía no ha realizado el sorteo.
+                      </p>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => void deliver()}
-                        disabled={busy || assignment.giftStatus === 'delivered'}
-                        className="mt-6 inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-red-700 px-6 font-bold text-white transition hover:bg-red-800 disabled:opacity-50"
+                        onClick={() => void reveal()}
+                        disabled={busy}
+                        className="mt-5 inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-red-700 px-5 font-bold text-white hover:bg-red-800 disabled:opacity-50"
                       >
-                        <CheckCircle2 size={19} />
-                        {assignment.giftStatus === 'delivered'
-                          ? 'Regalo entregado'
-                          : 'Ya entregué el regalo'}
+                        <Gift size={18} />
+                        {busy
+                          ? 'Descubriendo...'
+                          : 'Descubrir mi Amigo Secreto'}
                       </button>
-                    </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* RESULTADO DEL SORTEO */}
+              {assignment && (
+                <div className="mx-6 mb-8 rounded-2xl border border-red-200 bg-[#fff8f5] p-6 text-center sm:mx-8">
+                  <p className="text-sm font-bold uppercase tracking-wider text-red-700">
+                    Te tocó regalar a
+                  </p>
+
+                  {assignment.receiver.avatarUrl && (
+                    <img
+                      src={assignment.receiver.avatarUrl}
+                      alt={assignment.receiver.name}
+                      className="mx-auto mt-5 h-24 w-24 rounded-full object-cover"
+                    />
                   )}
-                </>
+
+                  <h3 className="mt-4 text-3xl font-black text-red-950">
+                    {assignment.receiver.name}
+                  </h3>
+
+                  <div className="mt-6 rounded-xl bg-white p-5 text-left">
+                    <h4 className="font-black text-red-950">
+                      Su lista de deseos
+                    </h4>
+
+                    {assignment.wishlist.length ? (
+                      <div className="mt-3 space-y-3">
+                        {assignment.wishlist.map((wish, index) => (
+                          <div
+                            key={index}
+                            className="rounded-xl border border-red-100 p-3"
+                          >
+                            <p className="text-sm font-semibold">
+                              {wish.name}
+                            </p>
+
+                            {wish.productUrl && (
+                              <a
+                                href={wish.productUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-2 inline-block text-sm font-bold text-red-700 hover:underline"
+                              >
+                                Ver producto
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm text-slate-500">
+                        Esta persona todavía no compartió sus deseos.
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => void deliver()}
+                    disabled={
+                      busy || assignment.giftStatus === 'delivered'
+                    }
+                    className="mt-6 inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-red-700 px-5 font-bold text-white hover:bg-red-800 disabled:opacity-50"
+                  >
+                    <CheckCircle2 size={18} />
+                    {assignment.giftStatus === 'delivered'
+                      ? 'Regalo entregado'
+                      : 'Ya entregué el regalo'}
+                  </button>
+                </div>
               )}
             </section>
 
-            {/* REGISTRO */}
-            {guest.status === 'active' && (
-              showRegister ? (
+            {/* REGISTRO OPCIONAL */}
+            {guest.status === 'active' &&
+              (showRegister ? (
                 <GuestRegisterForm
                   token={token!}
                   groupId={groupId}
                   onCancel={() => setShowRegister(false)}
                 />
               ) : (
-                <section className="rounded-3xl bg-gradient-to-r from-red-950 to-red-700 p-7 text-white">
+                <section className="rounded-3xl bg-gradient-to-r from-red-950 to-red-700 p-7 text-white sm:p-9">
                   <div className="flex flex-wrap items-center justify-between gap-5">
                     <div>
                       <h2 className="text-2xl font-black">
-                        ¿Te gustaría quedarte?
+                        ¿Quieres crear tu propia celebración?
                       </h2>
 
-                      <p className="mt-3 max-w-xl text-sm leading-7 text-red-100">
-                        Crea una cuenta para gestionar tu perfil,
-                        crear tus propios grupos y enviar tarjetas.
-                        Conservaremos tu participación actual.
+                      <p className="mt-3 max-w-lg text-sm leading-7 text-red-100">
+                        Crea tu cuenta y conserva tu participación actual
+                        mientras organizas grupos y envías tarjetas.
                       </p>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setShowRegister(true)}
-                      className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-white px-5 font-bold text-red-800 transition hover:bg-red-50"
+                      className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-white px-5 font-bold text-red-800 hover:bg-red-50"
                     >
-                      <UserPlus size={19} />
+                      <UserPlus size={18} />
                       Crear mi cuenta
                     </button>
                   </div>
                 </section>
-              )
-            )}
-          </>
+              ))}
+          </div>
         )}
       </div>
     </main>

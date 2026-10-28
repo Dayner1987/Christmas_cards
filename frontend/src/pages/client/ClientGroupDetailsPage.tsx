@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-
+import GroupEventSelector from '../../components/client/GroupEventSelector';
 import OrganizerAssignments from '../../components/client/OrganizerAssignments';
 
 import {
@@ -359,7 +359,21 @@ const deleteGroupImage = async () => {
           })}
         </div>
       </section>
-
+{/* SOLO EL ORGANIZADOR ELIGE EL EVENTO */}
+{isOwner && (
+  <GroupEventSelector
+    group={group}
+    events={events}
+    onSaved={(updated, createdEvent) => {
+      setGroup(updated);
+      if (createdEvent) {
+        setEvents((previous) => previous.some((item) => item.id === createdEvent.id)
+          ? previous.map((item) => item.id === createdEvent.id ? createdEvent : item)
+          : [createdEvent, ...previous]);
+      }
+    }}
+  />
+)}
       {/* EVENTOS DEL GRUPO */}
       <section>
         <h2 className="flex items-center gap-2 text-2xl font-black text-red-950">

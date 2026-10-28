@@ -83,3 +83,50 @@ export const completeSecretSantaEvent = async (
 export async function uploadEventImage(id: string, file: File): Promise<SecretSantaEvent> {
   return (await api.post<SecretSantaEvent>(`/secret-santa-events/${id}/image`, imageForm(file))).data;
 }
+
+// Catálogo general del administrador, independiente de los sorteos por grupo.
+import type {
+  SecretSantaTemplate,
+  CreateSecretSantaTemplate,
+  UpdateSecretSantaTemplate,
+  ApplyTemplateResult,
+} from '../types/secret_santa_templates.schema';
+
+export async function getSecretSantaTemplates(): Promise<SecretSantaTemplate[]> {
+  return (await api.get<SecretSantaTemplate[]>('/secret-santa-events/templates')).data;
+}
+
+export async function createSecretSantaTemplate(
+  data: CreateSecretSantaTemplate,
+): Promise<SecretSantaTemplate> {
+  return (await api.post<SecretSantaTemplate>('/secret-santa-events/templates', data)).data;
+}
+
+export async function updateSecretSantaTemplate(
+  id: string,
+  data: UpdateSecretSantaTemplate,
+): Promise<SecretSantaTemplate> {
+  return (await api.patch<SecretSantaTemplate>(`/secret-santa-events/templates/${id}`, data)).data;
+}
+
+export async function deactivateSecretSantaTemplate(id: string): Promise<void> {
+  await api.delete(`/secret-santa-events/templates/${id}`);
+}
+
+export async function uploadSecretSantaTemplateImage(
+  id: string,
+  file: File,
+): Promise<SecretSantaTemplate> {
+  return (await api.post<SecretSantaTemplate>(
+    `/secret-santa-events/templates/${id}/image`, imageForm(file),
+  )).data;
+}
+
+export async function applySecretSantaTemplate(
+  groupId: string,
+  templateId: string,
+): Promise<ApplyTemplateResult> {
+  return (await api.post<ApplyTemplateResult>(
+    `/secret-santa-events/group/${groupId}/from-template/${templateId}`,
+  )).data;
+}
