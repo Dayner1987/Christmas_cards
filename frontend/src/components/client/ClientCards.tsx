@@ -716,41 +716,54 @@ export default function ClientCards({
                 key={card.id}
                 className="group overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
               >
+                <Link
+                  to={`/home/cards/${encodeURIComponent(card.id)}`}
+                  aria-label={`Abrir tarjeta ${card.name} en tamaño completo`}
+                  className="block outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-red-300"
+                >
+                  <div className="relative flex h-56 items-center justify-center overflow-hidden bg-gradient-to-br from-red-950 to-rose-500 text-white">
+                    {image ? (
+                      <img
+                        src={image}
+                        alt={card.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <Gift size={62} strokeWidth={1.4} />
+                    )}
+                    <span className="absolute bottom-3 right-3 rounded-full border border-white/30 bg-black/35 px-3 py-1.5 text-xs font-bold text-white opacity-0 shadow-lg backdrop-blur-sm transition group-hover:opacity-100 sm:opacity-100">
+                      Ver completa
+                    </span>
+                  </div>
 
-                <div className="flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br from-red-900 to-rose-500 text-white">
-                  {image ? (
-                    <img
-                      src={image}
-                      alt={card.name}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <Gift size={62} strokeWidth={1.4} />
-                  )}
-                </div>
+                  <div className="px-5 pb-4 pt-5">
+                    <span className="text-xs font-bold uppercase tracking-wide text-red-600">
+                      {categories[card.category] || 'Tarjeta'}
+                    </span>
 
-                <div className="p-5">
-                  <span className="text-xs font-bold uppercase tracking-wide text-red-600">
-                    {categories[card.category] || 'Tarjeta'}
-                  </span>
+                    <h3 className="mt-2 text-xl font-black text-red-950 transition-colors group-hover:text-red-700">
+                      {card.name}
+                    </h3>
 
-                  <h3 className="mt-2 text-xl font-black text-red-950">
-                    {card.name}
-                  </h3>
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+                      {card.description ||
+                        'Una tarjeta para compartir buenos momentos.'}
+                    </p>
+                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-red-700">
+                      Abrir tarjeta <span aria-hidden="true">→</span>
+                    </span>
+                  </div>
+                </Link>
 
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
-                    {card.description ||
-                      'Una tarjeta para compartir buenos momentos.'}
-                  </p>
-
+                <div className="px-5 pb-5">
                   <button
                     type="button"
                     onClick={() => void openSend(card)}
-                    className="mt-5 inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-700 px-4 font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-800 active:scale-[0.98]"
+                    className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-700 px-4 font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-800 active:scale-[0.98]"
                   >
                     <Send size={18} />
-                    Enviar tarjeta
+                    Enviar dentro de la app
                   </button>
                 </div>
               </article>

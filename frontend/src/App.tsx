@@ -28,6 +28,7 @@ import ClientGroupDetailsPage from './pages/client/ClientGroupDetailsPage';
 import ClientFriendProfilePage from './pages/client/ClientFriendProfilePage';
 
 import ClientMailboxPage from './pages/client/ClientMailboxPage';
+import CardDetailPage from './pages/client/CardDetailPage';
 
 import { authStorage } from './config/auth.storage';
 
@@ -103,6 +104,14 @@ export default function App() {
       {/* Portada accesible con o sin sesión */}
       <Route path="/" element={<Home />} />
 
+      {/* Vista pública: el enlace permite abrir una tarjeta sin iniciar sesión. */}
+      <Route element={<ClientLayout />}>
+        <Route
+          path="/tarjetas/:cardId"
+          element={<CardDetailPage publicView />}
+        />
+      </Route>
+
       {/* Invitaciones y acceso sin cuenta */}
       <Route path="/groups/join/:code" element={<JoinGroup />} />
       <Route path="/guests/participation/:groupId" element={<GuestDashboard />} />
@@ -159,6 +168,11 @@ export default function App() {
   <Route
     path="cards"
     element={<ClientCardsPage />}
+  />
+  {/* Vista completa dentro del área privada del cliente. */}
+  <Route
+    path="cards/:cardId"
+    element={<CardDetailPage />}
   />
   <Route
   path="mailbox"

@@ -16,7 +16,7 @@ export default function ClientFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-3">
         <div>
           <Link
-            to="/home"
+            to="/"
             className="inline-flex cursor-pointer items-center gap-3"
           >
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-red-600">

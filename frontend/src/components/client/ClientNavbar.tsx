@@ -43,7 +43,7 @@ export default function ClientNavbar() {
     <header className="sticky top-0 z-40 border-b border-red-100 bg-white/95 shadow-sm backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link
-          to="/home"
+          to={user ? '/home' : '/'}
           className="flex cursor-pointer items-center gap-3"
         >
           <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 text-white shadow-lg shadow-red-200">
@@ -55,55 +55,89 @@ export default function ClientNavbar() {
         </Link>
 
         <div className="order-3 flex w-full items-center gap-1 overflow-x-auto border-t border-red-50 pt-3 md:order-2 md:w-auto md:border-0 md:pt-0">
-          {navigation.map(({ label, path, icon: Icon, end }) => (
+          {user ? (
+            navigation.map(({ label, path, icon: Icon, end }) => (
+              <NavLink
+                key={path}
+                to={path}
+                end={end}
+                className={({ isActive }) =>
+                  `flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                    isActive
+                      ? 'bg-red-600 text-white shadow-md shadow-red-200'
+                      : 'text-slate-600 hover:bg-red-50 hover:text-red-700'
+                  }`
+                }
+              >
+                <Icon size={17} />
+                {label}
+              </NavLink>
+            ))
+          ) : (
             <NavLink
-              key={path}
-              to={path}
-              end={end}
+              to="/"
+              end
               className={({ isActive }) =>
-                `flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  isActive
-                    ? 'bg-red-600 text-white shadow-md shadow-red-200'
-                    : 'text-slate-600 hover:bg-red-50 hover:text-red-700'
+                `flex shrink-0 items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+                  isActive ? 'bg-red-600 text-white' : 'text-slate-600 hover:bg-red-50 hover:text-red-700'
                 }`
               }
             >
-              <Icon size={17} />
-              {label}
+              <House size={17} />
+              Inicio
             </NavLink>
-          ))}
+          )}
         </div>
 
         <div className="order-2 flex items-center gap-2 md:order-3">
-          <Link
-            to="/perfil/editar"
-            title="Mi perfil"
-            className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-100 px-2 py-1.5 transition hover:bg-red-50"
-          >
-            {user?.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt="Mi foto"
-                className="h-9 w-9 rounded-full object-cover"
-              />
-            ) : (
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-red-100 text-red-700">
-                <UserRound size={19} />
-              </span>
-            )}
-            <span className="hidden max-w-24 truncate text-sm font-bold text-red-950 lg:block">
-              {user?.firstName || user?.username}
-            </span>
-          </Link>
+          {user ? (
+            <>
+              <Link
+                to="/perfil/editar"
+                title="Mi perfil"
+                className="flex cursor-pointer items-center gap-2 rounded-xl border border-red-100 px-2 py-1.5 transition hover:bg-red-50"
+              >
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt="Mi foto"
+                    className="h-9 w-9 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-red-100 text-red-700">
+                    <UserRound size={19} />
+                  </span>
+                )}
+                <span className="hidden max-w-24 truncate text-sm font-bold text-red-950 lg:block">
+                  {user.firstName || user.username}
+                </span>
+              </Link>
 
-          <button
-            type="button"
-            onClick={logout}
-            title="Cerrar sesión"
-            className="cursor-pointer rounded-xl p-3 text-red-700 transition hover:bg-red-50 hover:scale-105 active:scale-95"
-          >
-            <LogOut size={20} />
-          </button>
+              <button
+                type="button"
+                onClick={logout}
+                title="Cerrar sesión"
+                className="cursor-pointer rounded-xl p-3 text-red-700 transition hover:scale-105 hover:bg-red-50 active:scale-95"
+              >
+                <LogOut size={20} />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="inline-flex min-h-10 items-center rounded-xl px-3 text-sm font-bold text-red-700 transition hover:bg-red-50"
+              >
+                Iniciar sesión
+              </Link>
+              <Link
+                to="/register"
+                className="inline-flex min-h-10 items-center rounded-xl bg-red-700 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-red-800"
+              >
+                Crear cuenta
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>
