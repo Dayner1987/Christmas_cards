@@ -18,7 +18,7 @@ import { useAuth } from '../../hooks/auth.hooks';
 
 const navigation = [
   { label: 'Inicio', path: '/home', icon: House, end: true },
-  { label: 'Cartas', path: '/home/cards', icon: Mail },
+  { label: 'Tarjetas', path: '/home/cards', icon: Mail },
   { label: 'Eventos', path: '/home/events', icon: CalendarHeart },
   { label: 'Mi espacio', path: '/home/my-space', icon: Users },
   
