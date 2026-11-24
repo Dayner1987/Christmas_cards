@@ -26,4 +26,4 @@ export interface CreateCard {
   isPublic?: boolean;
 }
 
-export type UpdateCard = Partial<CreateCard>;
+export type UpdateCard = Partial<CreateCard> & { isActive?: boolean };

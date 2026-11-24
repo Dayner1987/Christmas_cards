@@ -1,3 +1,12 @@
+import Marketplace from './pages/network/Marketplace';
+import Community from './pages/network/Community';
+import StoreRegister from './pages/network/StoreRegister';
+import StoreDashboard from './pages/network/StoreDashboard';
+import MusicPlayer from './components/music/MusicPlayer';
+import MusicAdmin from './pages/admin/MusicAdmin';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminStores from './pages/admin/AdminStores';
+import PasswordRecovery from './pages/PasswordRecovery';
 import type { ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
@@ -21,20 +30,20 @@ import EditUser from './components/admin/users/editUser';
 
 import ClientLayout from './components/client/ClientLayout';
 import ClientCardsPage from './pages/client/ClientCardsPage';
-import ClientEventsPage from './pages/client/ClientEventsPage';
+
 import ClientSpacePage from './pages/client/ClientSpacePage';
 
 import ClientGroupDetailsPage from './pages/client/ClientGroupDetailsPage';
 import ClientFriendProfilePage from './pages/client/ClientFriendProfilePage';
 
-import ClientMailboxPage from './pages/client/ClientMailboxPage';
+
 import CardDetailPage from './pages/client/CardDetailPage';
 
 import { authStorage } from './config/auth.storage';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  allowedRole?: 'admin' | 'client';
+  allowedRole?: 'admin' | 'client' | 'store';
 }
 
 interface PublicRouteProps {
@@ -51,14 +60,14 @@ function ProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== 'admin' && user.role !== 'client') {
+  if (user.role !== 'admin' && user.role !== 'client' && user.role !== 'store') {
     return <Navigate to="/login" replace />;
   }
 
   if (allowedRole && user.role !== allowedRole) {
     return (
       <Navigate
-        to={user.role === 'admin' ? '/admin' : '/home'}
+        to={user.role === 'admin' ? '/admin' : user.role === 'store' ? '/tienda/dashboard' : '/home'}
         replace
       />
     );
@@ -73,11 +82,11 @@ function PublicRoute({ children }: PublicRouteProps) {
   if (
     authStorage.isAuthenticated() &&
     user &&
-    (user.role === 'admin' || user.role === 'client')
+    (user.role === 'admin' || user.role === 'client' || user.role === 'store')
   ) {
     return (
       <Navigate
-        to={user.role === 'admin' ? '/admin' : '/home'}
+        to={user.role === 'admin' ? '/admin' : user.role === 'store' ? '/tienda/dashboard' : '/home'}
         replace
       />
     );
@@ -93,14 +102,30 @@ function MyProfilePage() {
 
   return (
     <EditUser
-      backPath={user?.role === 'admin' ? '/admin' : '/home'}
+      backPath={user?.role === 'admin' ? '/admin' : user?.role === 'store' ? '/tienda/dashboard' : '/home'}
     />
   );
 }
 
 export default function App() {
   return (
+    <>
+    <MusicPlayer/>
     <Routes>
+      <Route path="/admin/products" element={<ProtectedRoute allowedRole="admin"><AdminProducts/></ProtectedRoute>}/>
+      <Route element={<ClientLayout/>}>
+        <Route path="/tiendas" element={<Marketplace/>}/>
+        <Route path="/productos" element={<Marketplace/>}/>
+        <Route path="/tiendas/productos/:productId" element={<Marketplace/>}/>
+        <Route path="/tiendas/:storeId" element={<Marketplace/>}/>
+        <Route path="/comunidad" element={<Community/>}/>
+        <Route path="/comunidad/:userId" element={<Community/>}/>
+        <Route path="/tiendas/registro" element={<PublicRoute><StoreRegister/></PublicRoute>}/>
+        <Route path="/tienda/dashboard" element={<ProtectedRoute allowedRole="store"><StoreDashboard/></ProtectedRoute>}/>
+      </Route>
+      <Route path="/forgot-password" element={<PasswordRecovery/>}/>
+      <Route path="/reset-password" element={<PasswordRecovery reset/>}/>
+      <Route path="/admin/music" element={<ProtectedRoute allowedRole="admin"><MusicAdmin/></ProtectedRoute>}/>
       {/* Portada accesible con o sin sesión */}
       <Route path="/" element={<Home />} />
 
@@ -169,6 +194,12 @@ export default function App() {
     path="cards"
     element={<ClientCardsPage />}
   />
+
+  {/* Catálogo público de productos de las tiendas */}
+  <Route
+    path="products"
+    element={<Marketplace />}
+  />
   {/* Vista completa dentro del área privada del cliente. */}
   <Route
     path="cards/:cardId"
@@ -176,13 +207,13 @@ export default function App() {
   />
   <Route
   path="mailbox"
-  element={<ClientMailboxPage />}
+  element={<Navigate to="/home/my-space?section=mailbox" replace />}
 />
 
   {/* Eventos de Amigo Secreto */}
   <Route
     path="events"
-    element={<ClientEventsPage />}
+    element={<Navigate to="/home/my-space?section=events" replace />}
   />
 
   {/* Espacio personal: grupos y deseos */}
@@ -224,6 +255,15 @@ export default function App() {
         element={
           <ProtectedRoute allowedRole="admin">
             <HomeAdmin />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/stores"
+        element={
+          <ProtectedRoute allowedRole="admin">
+            <AdminStores />
           </ProtectedRoute>
         }
       />
@@ -281,5 +321,6 @@ export default function App() {
       {/* Rutas inexistentes */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

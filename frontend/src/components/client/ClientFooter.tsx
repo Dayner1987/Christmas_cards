@@ -42,7 +42,7 @@ export default function ClientFooter() {
               <Mail size={16} /> Tarjetas
             </Link>
 
-            <Link to="/home/events" className="flex cursor-pointer items-center gap-2 hover:text-white">
+            <Link to="/home/my-space?section=events" className="flex cursor-pointer items-center gap-2 hover:text-white">
               <CalendarHeart size={16} /> Eventos
             </Link>
 

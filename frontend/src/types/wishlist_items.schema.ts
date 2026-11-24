@@ -6,6 +6,7 @@ export type WishlistItemPriority =
 export interface WishlistItem {
   id: string;
   wishlistId: string;
+  productId?: string | null;
   name: string;
   description: string | null;
   productUrl: string | null;

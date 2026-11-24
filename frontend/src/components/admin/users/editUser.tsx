@@ -745,29 +745,6 @@ export default function EditUser({
               </p>
             </div>
 
-            {displayedError && (
-              <div
-                role="alert"
-                className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
-              >
-                {displayedError}
-              </div>
-            )}
-
-            {success && (
-              <div
-                role="status"
-                className="mb-6 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
-              >
-                <CheckCircle2
-                  size={18}
-                  aria-hidden="true"
-                  className="mt-0.5 shrink-0"
-                />
-                {success}
-              </div>
-            )}
-
             <form onSubmit={handleSaveProfile}>
               <fieldset disabled={busy} className="min-w-0">
                 <legend className="mb-5 flex items-center gap-2 text-lg font-bold text-red-950">
@@ -841,6 +818,29 @@ export default function EditUser({
                     </p>
                   </div>
                 </div>
+
+            {displayedError && (
+              <div
+                role="alert"
+                className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+              >
+                {displayedError}
+              </div>
+            )}
+
+            {success && (
+              <div
+                role="status"
+                className="mb-6 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+              >
+                <CheckCircle2
+                  size={18}
+                  aria-hidden="true"
+                  className="mt-0.5 shrink-0"
+                />
+                {success}
+              </div>
+            )}
 
                 <div className="mt-6 flex justify-end">
                   <button

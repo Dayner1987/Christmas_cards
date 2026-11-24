@@ -16,6 +16,9 @@ export const IMAGE_ALLOWED_FORMATS = [
 ];
 
 export const IMAGE_FOLDERS = {
+  PRODUCTS: 'christmas_cards/products',
+  STORES: 'christmas_cards/stores',
+  TREES: 'christmas_cards/trees',
   USERS: 'christmas_cards/users',
   CARDS: 'christmas_cards/cards',
   GROUPS: 'christmas_cards/groups',

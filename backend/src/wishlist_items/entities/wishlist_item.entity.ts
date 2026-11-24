@@ -1,3 +1,5 @@
+import { Index } from 'typeorm';
+import { StoreProduct } from '../../network/entities';
 import {
   Column,
   CreateDateColumn,
@@ -17,7 +19,13 @@ export enum WishlistItemPriority {
 }
 
 @Entity('wishlist_items')
+@Index('uk_wishlist_store_product', ['wishlistId', 'productId'], { unique: true, where: 'product_id IS NOT NULL' })
 export class WishlistItem {
+  @Column({ name: 'product_id', type: 'uuid', nullable: true })
+  productId: string | null;
+  @ManyToOne(() => StoreProduct, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'product_id' }) product: StoreProduct | null;
+
   @PrimaryGeneratedColumn('uuid', {
     name: 'id_wishlist_items',
   })

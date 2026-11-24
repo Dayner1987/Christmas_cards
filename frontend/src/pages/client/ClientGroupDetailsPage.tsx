@@ -1,3 +1,4 @@
+import {GroupChat,GroupTree} from '../network/GroupRoom';
 
  // src/pages/client/ClientGroupDetailsPage.tsx
 
@@ -178,6 +179,7 @@ const deleteGroupImage = async () => {
         Mis grupos
       </Link>
 
+
       {/* PORTADA */}
       <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-red-950 to-red-600 text-white">
         <div className="relative h-56 sm:h-72">
@@ -217,7 +219,7 @@ const deleteGroupImage = async () => {
           </div>
 
           {isOwner && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => void copyInvitation()}
@@ -289,6 +291,7 @@ const deleteGroupImage = async () => {
         </p>
       )}
 
+      <div className="group-content-layout"><div className="group-main-content">
       {/* INTEGRANTES */}
       <section>
         <h2 className="flex items-center gap-2 text-2xl font-black text-red-950">
@@ -300,7 +303,7 @@ const deleteGroupImage = async () => {
           Conoce a los integrantes y descubre los deseos que han compartido.
         </p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {members.map((member) => {
             const name = member.isGuest
               ? member.guestName || 'Invitado'
@@ -405,7 +408,7 @@ const deleteGroupImage = async () => {
                   {event.status === 'draft' ? 'Por sortear' : event.status === 'drawn' ? 'Sorteado' : 'Evento finalizado o cancelado'}
                 </p>
                 <Link
-                  to="/home/events"
+                  to="/home/my-space?section=events"
                   className="mt-2 inline-flex cursor-pointer items-center gap-1 text-sm font-bold text-red-700 hover:underline"
                 >
                   Ir al evento <ArrowRight size={15} />
@@ -430,6 +433,9 @@ const deleteGroupImage = async () => {
           </p>
         )}
       </section>
+
+      </div><aside className="group-chat-column">{groupId&&<GroupChat key={groupId} groupId={groupId}/>}</aside></div>
+      {groupId&&<GroupTree key={`tree:${groupId}`} groupId={groupId}/>}
 
       {qr && (
         <div

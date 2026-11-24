@@ -9,7 +9,10 @@ import {
 } from 'react-router-dom';
 
 import {
+  Music,
+  Package,
   CalendarDays,
+  ContactRound,
   Gift,
   Heart,
   Home,
@@ -17,6 +20,8 @@ import {
   Layers,
   LogOut,
   Menu,
+  ShoppingBag,
+  Store,
   UserRoundPen,
   Users,
   X,
@@ -26,6 +31,8 @@ import MobileNavbar from './users/mobileNavbar';
 import { authStorage } from '../../config/auth.storage';
 
 const links = [
+  { label: 'Productos', to: '/admin/products', icon: Package, end: false },
+  { label: 'Música', to: '/admin/music', icon: Music, end: false },
   {
     label: 'Inicio',
     to: '/admin',
@@ -36,6 +43,24 @@ const links = [
     label: 'Usuarios',
     to: '/admin/users',
     icon: Users,
+    end: false,
+  },
+  {
+    label: 'Tiendas',
+    to: '/admin/stores',
+    icon: Store,
+    end: false,
+  },
+  {
+    label: 'Catálogo público',
+    to: '/tiendas',
+    icon: ShoppingBag,
+    end: false,
+  },
+  {
+    label: 'Comunidad',
+    to: '/comunidad',
+    icon: ContactRound,
     end: false,
   },
   {

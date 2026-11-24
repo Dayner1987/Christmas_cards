@@ -1,59 +1,13 @@
-
- // src/pages/client/ClientSpacePage.tsx
-
-import { Link } from 'react-router-dom';
-import { UserRound } from 'lucide-react';
-
+import {Link,useSearchParams} from 'react-router-dom';
+import {UserRound,Users,Heart,ShoppingBag,CalendarHeart,Inbox,ArrowUpRight} from 'lucide-react';
 import ClientGroups from '../../components/client/ClientGroups';
 import ClientWishlist from '../../components/client/ClientWishlist';
-import { useAuth } from '../../hooks/auth.hooks';
-
-export default function ClientSpacePage() {
-  const { user } = useAuth();
-
-  return (
-    <div className="space-y-12">
-      <section className="flex flex-wrap items-center gap-5 rounded-3xl bg-gradient-to-r from-red-900 to-rose-600 p-7 text-white">
-        {user?.avatarUrl ? (
-          <img
-            src={user.avatarUrl}
-            alt="Mi fotografía"
-            className="h-20 w-20 rounded-full border-4 border-white/30 object-cover"
-          />
-        ) : (
-          <span className="grid h-20 w-20 place-items-center rounded-full bg-white/15">
-            <UserRound size={38} />
-          </span>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <p className="text-sm text-red-100">Mi espacio personal</p>
-
-          <h1 className="mt-1 text-2xl font-black sm:text-3xl">
-            {user?.firstName || user?.username}
-            {user?.lastName ? ` ${user.lastName}` : ''}
-          </h1>
-
-          <p className="mt-1 text-sm text-red-100">
-            @{user?.username}
-          </p>
-        </div>
-
-        <Link
-          to="/perfil/editar"
-          className="cursor-pointer rounded-xl bg-white px-5 py-3 text-sm font-bold text-red-800 transition hover:bg-red-50"
-        >
-          Editar perfil
-        </Link>
-      </section>
-
-      <ClientGroups />
-
-      <div className="border-t border-red-100" />
-
-      <div id="deseos" className="scroll-mt-28">
-        <ClientWishlist />
-      </div>
-    </div>
-  );
+import ClientEvents from '../../components/client/ClientEvents';
+import ClientMailboxPage from './ClientMailboxPage';
+import {useAuth} from '../../hooks/auth.hooks';
+const sections=[{id:'groups',label:'Mis grupos',Icon:Users},{id:'wishes',label:'Mis deseos',Icon:Heart},{id:'events',label:'Eventos',Icon:CalendarHeart},{id:'mailbox',label:'Mi buzón',Icon:Inbox}];
+export default function ClientSpacePage(){
+ const {user}=useAuth();const [params,setParams]=useSearchParams();const selected=sections.some(s=>s.id===params.get('section'))?params.get('section')!:'groups';
+ return <div className="personal-space"><section className="space-cover"><div className="space-avatar">{user?.avatarUrl?<img src={user.avatarUrl} alt="Mi fotografía"/>:<UserRound size={40}/>}</div><div className="space-intro"><span>MI ESPACIO PERSONAL</span><h1>{[user?.firstName||user?.username,user?.lastName].filter(Boolean).join(' ')}</h1><p>Tus grupos, deseos, celebraciones y mensajes, juntos.</p></div><Link to="/perfil/editar" className="space-edit">Editar perfil <ArrowUpRight size={17}/></Link></section><nav className="space-tabs" aria-label="Secciones de mi espacio">{sections.map(({id,label,Icon})=><button key={id} aria-pressed={selected===id} className={selected===id?'selected':''} onClick={()=>{const next=new URLSearchParams(params);next.set('section',id);setParams(next);}}><Icon size={19}/>{label}</button>)}</nav><section className="space-content" aria-label={sections.find(s=>s.id===selected)?.label}>{selected==='groups'&&<ClientGroups/>}{selected==='wishes'&&<div id="deseos"><Link className="space-catalog-link" to="/home/products"><ShoppingBagIcon/> Buscar regalos en las tiendas <ArrowUpRight size={17}/></Link><ClientWishlist/></div>}{selected==='events'&&<ClientEvents/>}{selected==='mailbox'&&<ClientMailboxPage embedded/>}</section></div>;
 }
+function ShoppingBagIcon(){return <ShoppingBag size={18}/>;}

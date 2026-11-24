@@ -146,7 +146,9 @@ export class CardsService {
     updateCardDto: UpdateCardDto,
   ) {
     const card =
-      await this.findActiveCardById(id);
+      await this.cardsRepository.findOneBy({ id });
+    if (!card) throw new NotFoundException("Tarjeta no encontrada");
+    if (updateCardDto.isActive !== undefined) await this.usersService.assertAccess(userId, undefined, true);
 
     await this.validateOwnership(
       card,

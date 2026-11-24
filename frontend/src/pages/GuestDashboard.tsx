@@ -1,3 +1,4 @@
+import GroupRoom from './network/GroupRoom';
 
  // src/pages/GuestDashboard.tsx
 import { useEffect, useState } from 'react';
@@ -248,6 +249,7 @@ const event = selectedEventId
           ChristmasCards
         </Link>
 
+        {!loading && guest?.status === 'active' && token && groupId && <GroupRoom key={groupId} groupId={groupId} guestToken={token}/>}
         {loading && (
           <p className="rounded-2xl bg-white p-6 text-slate-600">
             Cargando tu grupo...

@@ -1,5 +1,6 @@
 import {
   useState,
+  useEffect,
 } from 'react';
 
 import {
@@ -24,6 +25,13 @@ export function useAuth() {
   ] = useState<AuthUser | null>(
     authStorage.getUser(),
   );
+
+  useEffect(() => {
+    const sync = () => setUser(authStorage.getUser());
+    window.addEventListener('auth-changed', sync);
+    window.addEventListener('storage', sync);
+    return () => { window.removeEventListener('auth-changed', sync); window.removeEventListener('storage', sync); };
+  }, []);
 
   const [
     loading,

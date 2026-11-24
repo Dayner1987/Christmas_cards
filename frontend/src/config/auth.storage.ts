@@ -17,6 +17,7 @@ export const authStorage = {
       USER_KEY,
       JSON.stringify(authResponse.user),
     );
+    window.dispatchEvent(new Event('auth-changed'));
   },
 
   updateUser(user: AuthUser): void {
@@ -24,6 +25,7 @@ export const authStorage = {
       USER_KEY,
       JSON.stringify(user),
     );
+    window.dispatchEvent(new Event('auth-changed'));
   },
 
   getToken(): string | null {
@@ -51,5 +53,6 @@ export const authStorage = {
   clearSession(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    window.dispatchEvent(new Event('auth-changed'));
   },
 };

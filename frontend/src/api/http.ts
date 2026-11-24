@@ -6,7 +6,11 @@ import { authStorage } from '../config/auth.storage';
 export const api = axios.create({ baseURL: API_CONFIG.baseUrl });
 api.interceptors.request.use(config => {
   const token = authStorage.getToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Permite usar un token temporal de otra cuenta en operaciones puntuales
+  // (por ejemplo, completar la tienda recién creada) sin cambiar la sesión actual.
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 

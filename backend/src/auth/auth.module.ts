@@ -24,12 +24,10 @@ import { UsersModule } from '../users/users.module';
         configService: ConfigService,
       ) => ({
         secret:
-          configService.get<string>(
-            'JWT_SECRET',
-          ),
+          (configService.get<string>('JWT_SECRET') || configService.get<string>('JWT_ACCESS_SECRET')),
 
         signOptions: {
-          expiresIn: '1d',
+          expiresIn: (configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '1d') as NonNullable<import('@nestjs/jwt').JwtSignOptions['expiresIn']>,
         },
       }),
     }),

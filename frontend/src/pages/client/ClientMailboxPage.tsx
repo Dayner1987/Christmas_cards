@@ -49,7 +49,7 @@ function formatDate(value: string) {
   });
 }
 
-export default function ClientMailboxPage() {
+export default function ClientMailboxPage({embedded=false}:{embedded?:boolean}) {
   const [tab, setTab] = useState<MailboxTab>('received');
 
   const [received, setReceived] = useState<UserCard[]>([]);
@@ -168,7 +168,7 @@ export default function ClientMailboxPage() {
     <div className="space-y-8">
 
       {/* ENCABEZADO */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-950 via-red-800 to-rose-600 p-8 text-white sm:p-12">
+      {!embedded && <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-950 via-red-800 to-rose-600 p-8 text-white sm:p-12">
         <div className="pointer-events-none absolute -right-12 -top-16 h-64 w-64 rounded-full border-[40px] border-white/10" />
 
         <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-bold uppercase tracking-wider">
@@ -184,7 +184,8 @@ export default function ClientMailboxPage() {
           Descubre las tarjetas que tus amigos te enviaron
           y vuelve a leer sus mejores deseos.
         </p>
-      </section>
+      </section>}
+      {embedded && <div><h2 className="text-2xl font-black text-red-950">Mi buzón navideño</h2><p className="mt-2 text-sm text-slate-500">Las tarjetas que recibes y envías, guardadas en tu espacio.</p></div>}
 
       {/* NAVEGACIÓN */}
       <div className="flex flex-wrap items-center justify-between gap-3">

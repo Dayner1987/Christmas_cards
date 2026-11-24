@@ -5,6 +5,7 @@ import {
   deleteCard as deleteCardRequest,
   getMyCardById,
   getMyCards,
+  getAdminCards,
   getPublicCardById,
   getPublicCards,
   updateCard as updateCardRequest,
@@ -61,6 +62,14 @@ export const useCards = () => {
         return response;
       }, 'No se pudieron obtener las tarjetas públicas'),
     [execute],
+  );
+
+  const fetchAdminCards = useCallback(
+    (): Promise<Card[]> => execute(async () => {
+      const response = await getAdminCards();
+      setMyCards(response);
+      return response;
+    }, 'No se pudieron obtener todas las tarjetas'), [execute],
   );
 
   const fetchMyCards = useCallback(
@@ -176,6 +185,7 @@ export const useCards = () => {
     clearError,
     fetchPublicCards,
     fetchMyCards,
+    fetchAdminCards,
     fetchPublicCardById,
     fetchMyCardById,
     createCard,

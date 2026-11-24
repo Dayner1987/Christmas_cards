@@ -44,7 +44,7 @@ function CardImage({ card, image }: { card?: Card | null; image?: string }) {
 export default function CardsAdmin() {
   const user = authStorage.getUser();
   const {
-    myCards, publicCards, loading, fetchMyCards, fetchPublicCards,
+    myCards, publicCards, loading, fetchAdminCards: fetchMyCards, fetchPublicCards,
     createCard, updateCard, deleteCard,
   } = useCards();
 
@@ -216,7 +216,7 @@ export default function CardsAdmin() {
           <section className="flex flex-col gap-3 rounded-2xl border border-red-100 bg-white p-4 sm:flex-row sm:items-center">
             <div className="flex shrink-0 gap-2">
               <button onClick={() => setScope('mine')} type="button"
-                className={`flex-1 rounded-xl px-4 py-3 text-sm font-bold ${scope === 'mine' ? 'bg-red-700 text-white' : 'bg-red-50 text-red-700'}`}>Mis tarjetas</button>
+                className={`flex-1 rounded-xl px-4 py-3 text-sm font-bold ${scope === 'mine' ? 'bg-red-700 text-white' : 'bg-red-50 text-red-700'}`}>Todas las tarjetas</button>
               <button onClick={() => setScope('public')} type="button"
                 className={`flex-1 rounded-xl px-4 py-3 text-sm font-bold ${scope === 'public' ? 'bg-red-700 text-white' : 'bg-red-50 text-red-700'}`}>Catálogo público</button>
             </div>
@@ -249,13 +249,17 @@ export default function CardsAdmin() {
                     </span>
                     {!card.isActive && <span className="rounded-lg bg-amber-50 px-2 py-1 text-amber-900">Inactiva</span>}
                   </div>
+                  {!card.isActive && <button disabled={busy} className="rounded-lg bg-green-100 p-2 text-sm text-green-900" onClick={async () => {
+                    setBusy(true); try { await updateCard(card.id, { isActive: true }); await refresh(); }
+                    catch (cause) { setError(getApiError(cause)); } finally { setBusy(false); }
+                  }}>Reactivar tarjeta</button>}
                   <h2 className="break-words text-lg font-black text-red-950">{card.name}</h2>
                   <p className="line-clamp-2 text-sm text-slate-500">{card.description || 'Sin descripción'}</p>
                   <div className="flex flex-wrap gap-2 pt-2">
                     <button type="button" onClick={() => openFor('preview', card)} className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-800"><Eye size={16}/> Ver</button>
-                    {card.creatorId === user.id && <>
+                    {(card.creatorId === user.id || user.role === 'admin') && card.isActive && <>
                       <button type="button" onClick={() => openFor('edit', card)} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-700"><Pencil size={16}/> Editar</button>
-                      <button type="button" onClick={() => openFor('delete', card)} className="ml-auto rounded-xl p-2 text-red-700 hover:bg-red-50" aria-label="Eliminar tarjeta"><Trash2 size={18}/></button>
+                      <button type="button" onClick={() => openFor('delete', card)} className="ml-auto rounded-xl p-2 text-red-700 hover:bg-red-50" aria-label="Desactivar tarjeta"><Trash2 size={18}/></button>
                     </>}
                   </div>
                 </div>
@@ -265,7 +269,7 @@ export default function CardsAdmin() {
         </div>
 
         {modal && <Modal
-          title={modal === 'create' ? 'Nueva tarjeta' : modal === 'edit' ? 'Editar tarjeta' : modal === 'preview' ? 'Vista previa' : 'Eliminar tarjeta'}
+          title={modal === 'create' ? 'Nueva tarjeta' : modal === 'edit' ? 'Editar tarjeta' : modal === 'preview' ? 'Vista previa' : 'Desactivar tarjeta'}
           busy={busy} wide={modal !== 'delete'} onClose={close}>
           {error && <p role="alert" className="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-800">{error}</p>}
           {(modal === 'create' || modal === 'edit') && (
@@ -327,12 +331,12 @@ export default function CardsAdmin() {
           )}
           {modal === 'delete' && selected && (
             <div className="space-y-5">
-              <p className="text-sm text-slate-600">¿Eliminar definitivamente <strong>{selected.name}</strong>?</p>
+              <p className="text-sm text-slate-600">¿Desactivar <strong>{selected.name}</strong>?</p>
               <div className="flex flex-wrap justify-end gap-3">
                 <button type="button" onClick={close} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold">Volver</button>
                 <button type="button" onClick={() => void remove()} disabled={busy}
                   className="inline-flex items-center gap-2 rounded-xl bg-red-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">
-                  <Trash2 size={17} /> Eliminar
+                  <Trash2 size={17} /> Desactivar
                 </button>
               </div>
             </div>

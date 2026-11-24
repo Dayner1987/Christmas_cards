@@ -1,3 +1,4 @@
+import PublicProfileHeader from '../../components/profile/PublicProfileHeader';
 
  // src/pages/client/ClientFriendProfilePage.tsx
 
@@ -8,8 +9,6 @@ import {
   ArrowLeft,
   ExternalLink,
   Gift,
-  Heart,
-  UserRound,
 } from 'lucide-react';
 
 import {
@@ -86,39 +85,7 @@ export default function ClientFriendProfilePage() {
         Volver al grupo
       </Link>
 
-      {/* PERFIL */}
-      <section className="overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm">
-        <div className="h-36 bg-gradient-to-r from-red-950 via-red-700 to-rose-500" />
-
-        <div className="relative px-6 pb-7 sm:px-9">
-          {profile.avatarUrl ? (
-            <img
-              src={profile.avatarUrl}
-              alt={profile.name}
-              className="-mt-12 h-24 w-24 rounded-full border-4 border-white object-cover shadow-lg"
-            />
-          ) : (
-            <span className="-mt-12 grid h-24 w-24 place-items-center rounded-full border-4 border-white bg-red-100 text-red-700 shadow-lg">
-              <UserRound size={43} />
-            </span>
-          )}
-
-          <h1 className="mt-4 text-3xl font-black text-red-950">
-            {profile.name}
-          </h1>
-
-          <p className="mt-1 text-sm text-slate-500">
-            {profile.isGuest
-              ? 'Participante invitado'
-              : `@${profile.username}`}
-          </p>
-
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
-            <Heart size={16} />
-            {wishCount} deseos compartidos
-          </div>
-        </div>
-      </section>
+      <PublicProfileHeader name={profile.name} username={profile.username||undefined} avatar={profile.avatarUrl} lists={profile.wishlists.length} wishes={wishCount} guest={profile.isGuest}/>
 
       {/* DESEOS */}
       <section>

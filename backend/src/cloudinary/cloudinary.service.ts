@@ -38,6 +38,26 @@ export class CloudinaryService {
     private readonly client: typeof cloudinary,
   ) {}
 
+  async uploadMusic(file: Express.Multer.File): Promise<{ url: string; publicId: string }> {
+    return new Promise((resolve, reject) => {
+      const stream = this.client.uploader.upload_stream({ resource_type: 'video',
+        folder: 'christmas-cards/music', public_id: randomUUID(), allowed_formats: ['mp3', 'mp4'],
+        overwrite: false, timeout: 120000,
+      }, (error, result) => {
+        if (error || !result) return reject(new BadGatewayException('No se pudo subir el archivo de música.'));
+        resolve({ url: result.secure_url, publicId: result.public_id });
+      });
+      stream.on('error', () => reject(new BadGatewayException('Se interrumpió la subida.')));
+      stream.end(file.buffer);
+    });
+  }
+
+  async deleteMusic(id: string) {
+    if (!id.startsWith('christmas-cards/music/')) throw new BadRequestException('Archivo inválido.');
+    const result = await this.client.uploader.destroy(id, { resource_type: 'video', invalidate: true });
+    if (!['ok', 'not found'].includes(result.result)) throw new BadGatewayException('No se pudo eliminar el archivo.');
+  }
+
   async uploadImage(
     file: Express.Multer.File | undefined,
     folder: ImageFolder,

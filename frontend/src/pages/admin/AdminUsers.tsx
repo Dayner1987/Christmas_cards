@@ -22,6 +22,7 @@ type ModalState =
 
 const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Administrador',
+  store: 'Tienda',
   client: 'Cliente',
 };
 
@@ -850,6 +851,7 @@ function UsersContent({ currentUserId }: { currentUserId: string }) {
               <option value="">Todos los roles</option>
               <option value="admin">Administrador</option>
               <option value="client">Cliente</option>
+              <option value="store">Tienda</option>
             </select>
 
             <select

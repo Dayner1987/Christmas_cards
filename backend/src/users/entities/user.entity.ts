@@ -8,11 +8,15 @@ import {
 
 export enum UserRole {
   ADMIN = 'admin',
+  STORE = 'store',
   CLIENT = 'client',
 }
 
 @Entity('users')
 export class User {
+  @Column({ name: 'password_changed_at', type: 'timestamptz', nullable: true, select: false })
+  passwordChangedAt: Date | null;
+
   @PrimaryGeneratedColumn('uuid', {
     name: 'id_users',
   })

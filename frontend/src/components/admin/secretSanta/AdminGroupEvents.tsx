@@ -318,7 +318,7 @@ export default function AdminGroupEvents({ onBack }: { onBack: () => void }) {
 
       try {
         const draw = await drawAssignments(eventId);
-        if (draw.status !== 'drawn') throw new Error('El servidor no confirmó el sorteo.');
+        if (!draw || draw.status !== 'drawn') throw new Error('El servidor no confirmó el sorteo.');
         count = draw.participants;
       } catch (drawError) {
         // La respuesta puede perderse después de que el servidor guarde.

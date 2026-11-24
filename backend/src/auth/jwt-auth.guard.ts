@@ -1,3 +1,5 @@
+import { DataSource } from 'typeorm';
+import { User } from '../users/entities/user.entity';
 //src/auth/jwt-auth.guard.ts
 import {
   CanActivate,
@@ -12,6 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
+    private readonly db: DataSource,
   ) {}
 
   async canActivate(
@@ -35,7 +38,12 @@ export class JwtAuthGuard implements CanActivate {
           token,
         );
 
-      request.user = payload;
+      const user = await this.db.getRepository(User).createQueryBuilder('u')
+        .addSelect('u.passwordChangedAt').where('u.id = :id', { id: payload.sub }).getOne();
+      if (!user || user.status !== 'active' || (payload.pwd ?? 0) !== (user.passwordChangedAt?.getTime() ?? 0)) {
+        throw new UnauthorizedException('Inicia sesión nuevamente.');
+      }
+      request.user = { ...payload, role: user.role };
     } catch {
       throw new UnauthorizedException(
         'Token inválido o expirado',

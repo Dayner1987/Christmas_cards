@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Check,
@@ -9,6 +10,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  ShoppingBag,
   Trash2,
 } from 'lucide-react';
 
@@ -336,9 +338,12 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
                 </div>
 
                 <div className="flex flex-1 flex-col p-5">
-                  <span className="text-xs font-semibold text-red-600">
-                    {item.isReceived ? 'Recibido' : 'Pendiente'}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold text-red-600">
+                      {item.isReceived ? 'Recibido' : 'Pendiente'}
+                    </span>
+                    {item.productId && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700"><ShoppingBag className="h-3 w-3"/>Producto de tienda</span>}
+                  </div>
 
                   <h3 className="mt-2 break-words text-lg font-bold text-slate-900">
                     {item.name}
@@ -357,13 +362,13 @@ export default function WishlistItemsPanel({ wishlist, onBack }: Props) {
                     </span>
                   </div>
 
-                  {productLink && (
-                    <a
-                      href={productLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:underline"
-                    >
+                  {item.productId ? (
+                    <Link to={`/tiendas/productos/${item.productId}`} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:underline">
+                      <ExternalLink className="h-4 w-4" />
+                      Ver producto de tienda
+                    </Link>
+                  ) : productLink && (
+                    <a href={productLink} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-red-600 hover:underline">
                       <ExternalLink className="h-4 w-4" />
                       Ver producto
                     </a>

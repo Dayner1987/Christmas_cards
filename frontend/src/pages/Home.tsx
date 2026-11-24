@@ -63,8 +63,8 @@ export default function Home() {
     };
   }, []);
 
-  const loggedIn = user?.role === 'client' || user?.role === 'admin';
-  const panel = user?.role === 'admin' ? '/admin' : '/home';
+  const loggedIn = user?.role === 'client' || user?.role === 'admin' || user?.role === 'store';
+  const panel = user?.role === 'admin' ? '/admin' : user?.role === 'store' ? '/tienda/dashboard' : '/home';
   const start = loggedIn ? panel : '/register';
 
   return (
@@ -86,6 +86,7 @@ export default function Home() {
             className="hidden items-center gap-8 lg:flex"
             aria-label="Navegación principal"
           >
+            <Link to="/tiendas">Tiendas</Link><Link to="/comunidad">Comunidad</Link>
             {menu.map((item) => (
               <a
                 key={item.href}
@@ -129,6 +130,7 @@ export default function Home() {
 
         {menuOpen && (
           <nav className="space-y-1 border-t border-red-100 bg-white px-5 py-4 lg:hidden">
+            <Link to="/tiendas">Tiendas</Link><Link to="/comunidad">Comunidad</Link>
             {menu.map((item) => (
               <a
                 key={item.href}

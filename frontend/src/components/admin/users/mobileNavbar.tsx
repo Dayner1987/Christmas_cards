@@ -164,7 +164,7 @@ export default function MobileNavbar({
   const showAvatar = avatarUrl && avatarUrl !== failedAvatar;
 
   const roleLabel =
-    user.role === 'admin' ? 'Administrador' : 'Cliente';
+    user.role === 'admin' ? 'Administrador' : user.role === 'store' ? 'Tienda' : 'Cliente';
 
   return (
     <header className="relative z-40 flex min-h-[80px] items-center justify-between gap-3 border-b border-red-100 bg-white px-4 py-3 sm:px-6 lg:px-8">

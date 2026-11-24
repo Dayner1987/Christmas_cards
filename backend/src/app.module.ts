@@ -1,3 +1,5 @@
+import { NetworkModule } from './network/network.module';
+import { ExperienceModule } from './experience/experience.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -60,6 +62,8 @@ import { GroupSocialModule } from './group_social/group_social.module';
     }),
 
     CloudinaryModule,
+    ExperienceModule,
+    NetworkModule,
 
     AuthModule,
     UsersModule,

@@ -31,7 +31,7 @@ import { User } from './entities/user.entity';
         configService: ConfigService,
       ) => {
         const secret =
-          configService.get<string>('JWT_SECRET');
+          (configService.get<string>('JWT_SECRET') || configService.get<string>('JWT_ACCESS_SECRET'));
 
         if (!secret) {
           throw new Error(

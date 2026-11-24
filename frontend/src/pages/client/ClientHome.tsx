@@ -46,7 +46,7 @@ const sections = [
     description:
       'Organiza un Amigo Secreto y descubre a quién le darás un regalo.',
     image: photos.gifts,
-    path: '/home/events',
+    path: '/home/my-space?section=events',
     action: 'Ver eventos',
     icon: CalendarHeart,
   },
@@ -55,7 +55,7 @@ const sections = [
     description:
       'Comparte tus regalos favoritos y conoce los deseos de tus amigos.',
     image: photos.ornaments,
-    path: '/home/my-space#deseos',
+    path: '/home/my-space?section=wishes',
     action: 'Mis deseos',
     icon: Heart,
   },
@@ -238,7 +238,7 @@ export default function ClientHome() {
               </div>
 
               <Link
-                to="/home/events"
+                to="/home/my-space?section=events"
                 className="cursor-pointer font-bold text-red-700 hover:underline"
               >
                 Ver eventos
@@ -249,7 +249,7 @@ export default function ClientHome() {
               {events.slice(0, 2).map((event) => (
                 <Link
                   key={event.id}
-                  to="/home/events"
+                  to="/home/my-space?section=events"
                   className="group overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm transition hover:shadow-lg"
                 >
                   <div className="flex items-center gap-4 p-5">

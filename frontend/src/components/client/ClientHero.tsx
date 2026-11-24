@@ -42,7 +42,7 @@ export default function ClientHero() {
             </Link>
 
             <Link
-              to="/home/events"
+              to="/home/my-space?section=events"
               className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3 font-bold text-white transition hover:bg-white/20"
             >
               <Gift size={18} />

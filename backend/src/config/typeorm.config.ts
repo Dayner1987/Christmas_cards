@@ -19,9 +19,11 @@ export const typeOrmConfig = (
 
     autoLoadEntities: true,
 
-    // En desarrollo puede estar true.
-    // En producción mejor false y usar migraciones.
-    synchronize: configService.get<string>('DB_SYNCHRONIZE') === 'true',
+    // Desarrollo: las columnas nuevas se crean al iniciar NestJS.
+    // Una configuración explícita sigue teniendo prioridad.
+    synchronize: configService.get<string>('DB_SYNCHRONIZE') !== undefined
+      ? configService.get<string>('DB_SYNCHRONIZE') === 'true'
+      : configService.get<string>('NODE_ENV') !== 'production',
 
     ssl: dbSsl
       ? {

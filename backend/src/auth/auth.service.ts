@@ -161,6 +161,7 @@ export class AuthService
   private async buildAuthResponse(user: User) {
     const payload = {
       sub: user.id,
+      pwd: user.passwordChangedAt?.getTime() ?? 0,
       email: user.email,
       username: user.username,
       role: user.role,

@@ -1,3 +1,5 @@
+import { motion, useReducedMotion } from 'framer-motion';
+import CardShareDialog from './cards/CardShareDialog';
 
  // src/components/client/ClientCards.tsx
 
@@ -10,7 +12,7 @@ import {
 
 import type { FormEvent } from 'react';
 
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import {
   Gift,
@@ -19,6 +21,7 @@ import {
   Plus,
   Search,
   Send,
+  Share2,
   UserRound,
   Users,
   X,
@@ -71,6 +74,9 @@ export default function ClientCards({
   showCreate = true,
 }: ClientCardsProps) {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const reducedMotion = useReducedMotion();
+  const [sharingCard, setSharingCard] = useState<Card | null>(null);
 
   // =====================================================
   // CATÁLOGO DE TARJETAS
@@ -88,7 +94,9 @@ export default function ClientCards({
   // CREACIÓN DE TARJETAS
   // =====================================================
 
-  const [openCreate, setOpenCreate] = useState(false);
+  const [openCreate, setOpenCreate] = useState(searchParams.get('create') === '1');
+  useEffect(()=>{if(searchParams.get('create')==='1')setOpenCreate(true);},[searchParams]);
+  useEffect(()=>{if(openCreate&&searchParams.get('create')==='1')document.getElementById('crear-tarjeta')?.scrollIntoView?.({behavior:'smooth',block:'start'});},[openCreate,searchParams]);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -514,7 +522,7 @@ export default function ClientCards({
         <div className="flex flex-wrap gap-2">
 
           <Link
-            to="/home/mailbox"
+            to="/home/my-space?section=mailbox"
             className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-bold text-red-700 transition hover:bg-red-50"
           >
             <Inbox size={18} />
@@ -608,7 +616,7 @@ export default function ClientCards({
       {/* ================================================= */}
 
       {openCreate && (
-        <form
+        <form id="crear-tarjeta"
           onSubmit={(event) => void createNewCard(event)}
           className="grid gap-4 rounded-3xl border border-red-100 bg-white p-6 shadow-sm sm:grid-cols-2"
         >
@@ -712,9 +720,13 @@ export default function ClientCards({
               card.backgroundImageUrl;
 
             return (
-              <article
+              <motion.article
+                initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={reducedMotion ? undefined : { y: -5 }}
+                transition={{ duration: .25 }}
                 key={card.id}
-                className="group overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                className="group overflow-hidden rounded-3xl border border-red-100 bg-white shadow-sm transition-all duration-300 hover:shadow-xl"
               >
                 <Link
                   to={`/home/cards/${encodeURIComponent(card.id)}`}
@@ -727,7 +739,7 @@ export default function ClientCards({
                         src={image}
                         alt={card.name}
                         loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="h-full w-full bg-[#fff9f4] object-contain p-3 transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
                       <Gift size={62} strokeWidth={1.4} />
@@ -756,17 +768,21 @@ export default function ClientCards({
                   </div>
                 </Link>
 
-                <div className="px-5 pb-5">
+                <div className="space-y-2 px-5 pb-5">
                   <button
                     type="button"
                     onClick={() => void openSend(card)}
                     className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-700 px-4 font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-800 active:scale-[0.98]"
                   >
                     <Send size={18} />
-                    Enviar dentro de la app
+                    Enviar
+                  </button>
+                  <button type="button" onClick={() => setSharingCard(card)}
+                    className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 font-bold text-red-800 transition hover:border-red-400 hover:bg-red-50 focus-visible:ring-4 focus-visible:ring-red-100">
+                    <Share2 size={18}/> Compartir
                   </button>
                 </div>
-              </article>
+              </motion.article>
             );
           })}
 
@@ -781,6 +797,7 @@ export default function ClientCards({
 
       {/* ================================================= */}
       {/* MODAL PARA ENVIAR TARJETA */}
+      {sharingCard && <CardShareDialog card={sharingCard} onClose={() => setSharingCard(null)}/>}
       {/* ================================================= */}
 
       {selectedCard && (

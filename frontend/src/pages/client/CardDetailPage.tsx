@@ -1,3 +1,4 @@
+import {authStorage} from '../../config/auth.storage';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -10,7 +11,8 @@ import {
 import { getPublicCardById } from '../../api/cards';
 import { getApiError } from '../../api/http';
 import type { Card, CardCategory } from '../../types/cards.schema';
-import CardShareActions from '../../components/client/cards/CardShareActions';
+import CopyCardLink from '../../components/client/cards/CopyCardLink';
+import { motion, useReducedMotion } from 'framer-motion';
 
 interface CardDetailPageProps {
   publicView?: boolean;
@@ -24,6 +26,7 @@ const categoryLabels: Record<CardCategory, string> = {
 };
 
 export default function CardDetailPage({ publicView = false }: CardDetailPageProps) {
+  const reducedMotion = useReducedMotion();
   const { cardId } = useParams<{ cardId: string }>();
   const [card, setCard] = useState<Card | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,72 +107,27 @@ export default function CardDetailPage({ publicView = false }: CardDetailPagePro
   const image = card.frontImageUrl || card.previewImageUrl || card.backgroundImageUrl;
 
   return (
-    <section className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          to={backPath}
-          className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-bold text-red-800 transition hover:bg-red-50"
-        >
-          <ArrowLeft size={18} />
-          {backLabel}
-        </Link>
-
-        <span className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-white px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-red-700">
-          <Sparkles size={15} />
-          Vista completa
-        </span>
+    <motion.section initial={reducedMotion ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .45 }} className="mx-auto max-w-5xl space-y-6 pb-10">
+      <div className="flex items-center justify-between gap-3">
+        <Link to={backPath} className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold text-red-800 transition hover:bg-red-50"><ArrowLeft size={17}/>{backLabel}</Link>
+        <span className="text-xs font-bold uppercase tracking-[.2em] text-red-400">Un detalle para ti</span>
       </div>
-
-      <div className="overflow-hidden rounded-[2rem] border border-red-100 bg-gradient-to-br from-red-950 via-rose-950 to-slate-950 shadow-xl shadow-red-950/10">
-        <div className="grid lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,.95fr)]">
-          <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden p-4 sm:min-h-[620px] sm:p-8">
-            <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-red-500/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-amber-300/10 blur-3xl" />
-
-            <div className="relative flex min-h-[390px] w-full max-w-2xl items-center justify-center overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/5 p-3 shadow-2xl shadow-black/30 backdrop-blur-sm sm:min-h-[560px] sm:p-5">
-              {image ? (
-                <img
-                  src={image}
-                  alt={card.name}
-                  className="max-h-[78vh] w-full rounded-xl object-contain"
-                />
-              ) : (
-                <div className="flex min-h-[360px] w-full flex-col items-center justify-center rounded-xl bg-gradient-to-br from-red-700 via-rose-600 to-amber-500 p-8 text-center text-white sm:min-h-[500px]">
-                  <Gift size={76} strokeWidth={1.2} />
-                  <p className="mt-7 max-w-md text-3xl font-black leading-tight">{card.name}</p>
-                  {card.description && <p className="mt-4 max-w-md text-sm leading-6 text-white/85">{card.description}</p>}
-                  <Sparkles className="mt-8 text-amber-100" size={28} />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <aside className="flex flex-col justify-center bg-[#fffaf8] p-5 sm:p-8 lg:p-10">
-            <div className="mb-5 flex items-center gap-2 text-red-700">
-              <CalendarHeart size={18} />
-              <span className="text-xs font-black uppercase tracking-[.18em]">
-                {categoryLabels[card.category] || 'Tarjeta especial'}
-              </span>
-            </div>
-
-            <h1 className="text-3xl font-black leading-tight tracking-tight text-red-950 sm:text-4xl">
-              {card.name}
-            </h1>
-
-            <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
-              {card.description || 'Una tarjeta especial para compartir cariño, buenos deseos y momentos inolvidables.'}
-            </p>
-
-            <div className="my-7 h-px bg-gradient-to-r from-red-200 via-rose-100 to-transparent" />
-
-            <CardShareActions card={card} />
-
-            <p className="mt-5 text-center text-xs leading-5 text-slate-400">
-              Hecha para compartir buenos momentos. El enlace abre directamente esta tarjeta.
-            </p>
-          </aside>
+      <article className="christmas-card-detail">
+        <div className="christmas-card-visual">
+          <motion.div initial={reducedMotion ? false : { scale: .96 }} animate={{ scale: 1 }} className="christmas-card-frame">
+            {image ? <img src={image} alt={card.name}/> : <div className="christmas-card-placeholder"><Gift size={86} strokeWidth={1}/></div>}
+          </motion.div>
         </div>
-      </div>
-    </section>
+        <div className="christmas-card-description">
+          <span className="card-category"><CalendarHeart size={16}/>{categoryLabels[card.category] || 'Tarjeta especial'}</span>
+          <h1>{card.name}</h1>
+          <p>{card.description || 'Los pequeños detalles hacen grandes momentos. Esta tarjeta es para ti.'}</p>
+          <div className="card-detail-divider"><Sparkles size={20}/></div>
+          <CopyCardLink key={card.id} card={card}/>
+          <CopyCardLink key={`${card.id}:image`} card={card} image/>
+        </div>
+      </article>
+      <section className="card-create-callout"><div><span><Sparkles size={20}/> UN DETALLE CON TU ESTILO</span><h2>Crea tu propia tarjeta navideña</h2><p>Elige una imagen, escribe tus mejores deseos y compártelos.</p></div><Link to={authStorage.getUser()?.role==='admin'?'/admin/cards':authStorage.getUser()?.role==='client'?'/home/cards?create=1#crear-tarjeta':'/login'}><Gift size={19}/> Crear mi propia tarjeta</Link></section>
+    </motion.section>
   );
 }

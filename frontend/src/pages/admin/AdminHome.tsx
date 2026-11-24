@@ -1,29 +1,54 @@
-// src/pages/admin/AdminHome.tsx
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowRight, CalendarHeart, Gift, Layers, RefreshCw,
-  ShieldCheck, Users,
+  ArrowRight,
+  CalendarHeart,
+  ContactRound,
+  Gift,
+  Heart,
+  Layers,
+  Music,
+  Package,
+  RefreshCw,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
+  Users,
 } from 'lucide-react';
 import AdminSidebar from '../../components/admin/AdminSidebar';
 import { getUsers } from '../../api/users';
 import { getAdminGroups } from '../../api/groups';
 import { getAdminCards } from '../../api/cards';
 import { getSecretSantaTemplates } from '../../api/secret_santa_events';
-import { getApiError } from '../../api/http';
+import { api, getApiError } from '../../api/http';
 
 type Statistics = {
   users: number | null;
   groups: number | null;
   cards: number | null;
-  publicCards: number | null;
+  stores: number | null;
+  products: number | null;
   templates: number | null;
 };
-const empty: Statistics = { users: null, groups: null, cards: null, publicCards: null, templates: null };
+
+const empty: Statistics = {
+  users: null,
+  groups: null,
+  cards: null,
+  stores: null,
+  products: null,
+  templates: null,
+};
+
 const links = [
   { to: '/admin/users', label: 'Usuarios', detail: 'Administrar cuentas y permisos', icon: Users },
+  { to: '/admin/music', label: 'Música', detail: 'Administrar la lista de reproducción navideña', icon: Music },
+  { to: '/admin/stores', label: 'Tiendas', detail: 'Crear cuentas comerciales y revisar sus catálogos', icon: Store },
+  { to: '/tiendas', label: 'Catálogo público', detail: 'Consultar productos y escaparates publicados', icon: ShoppingBag },
+  { to: '/comunidad', label: 'Comunidad', detail: 'Explorar perfiles públicos y listas compartidas', icon: ContactRound },
   { to: '/admin/cards', label: 'Tarjetas', detail: 'Crear y publicar con una sola imagen', icon: Gift },
   { to: '/admin/groups', label: 'Grupos', detail: 'Consultar y administrar grupos', icon: Layers },
+  { to: '/admin/wishlists', label: 'Listas de deseos', detail: 'Consultar los regalos guardados por la comunidad', icon: Heart },
   { to: '/admin/secret-santa', label: 'Amigo secreto', detail: 'Crear eventos globales sin IDs', icon: CalendarHeart },
 ];
 
@@ -33,14 +58,23 @@ export default function HomeAdmin() {
   const [error, setError] = useState('');
 
   const reload = useCallback(async () => {
-    setLoading(true); setError('');
-    const calls = await Promise.allSettled([getUsers(), getAdminGroups(), getAdminCards(), getSecretSantaTemplates()]);
+    setLoading(true);
+    setError('');
+    const calls = await Promise.allSettled([
+      getUsers(),
+      getAdminGroups(),
+      getAdminCards(),
+      getSecretSantaTemplates(),
+      api.get<{ total: number }>('/stores', { params: { page: 1, limit: 1 } }),
+      api.get<{ total: number }>('/products', { params: { page: 1, limit: 1 } }),
+    ]);
     setStats({
       users: calls[0].status === 'fulfilled' ? calls[0].value.length : null,
       groups: calls[1].status === 'fulfilled' ? calls[1].value.length : null,
-      cards: calls[2].status === 'fulfilled' ? calls[2].value.filter((card) => card.isActive).length : null,
-      publicCards: calls[2].status === 'fulfilled' ? calls[2].value.filter((card) => card.isActive && card.isPublic).length : null,
+      cards: calls[2].status === 'fulfilled' ? calls[2].value.filter((card) => card.isActive && card.isPublic).length : null,
       templates: calls[3].status === 'fulfilled' ? calls[3].value.length : null,
+      stores: calls[4].status === 'fulfilled' ? calls[4].value.data.total : null,
+      products: calls[5].status === 'fulfilled' ? calls[5].value.data.total : null,
     });
     const failed = calls.find((item) => item.status === 'rejected');
     if (failed && failed.status === 'rejected') {
@@ -53,8 +87,10 @@ export default function HomeAdmin() {
 
   const tiles = [
     ['Usuarios registrados', stats.users, Users],
+    ['Tiendas publicadas', stats.stores, Store],
+    ['Productos públicos', stats.products, Package],
     ['Grupos', stats.groups, Layers],
-    ['Tarjetas públicas', stats.publicCards, Gift],
+    ['Tarjetas públicas', stats.cards, Gift],
     ['Eventos globales', stats.templates, CalendarHeart],
   ] as const;
 
@@ -67,12 +103,13 @@ export default function HomeAdmin() {
             <div className="relative z-10 max-w-xl">
               <p className="text-xs font-black uppercase tracking-widest text-red-200">Panel de administración</p>
               <h1 className="mt-3 text-3xl font-black sm:text-4xl">Bienvenido a ChristmasCards</h1>
-              <p className="mt-4 text-sm leading-7 text-red-100">Gestiona tus tarjetas, grupos y celebraciones desde un solo lugar.</p>
-              <Link to="/admin/secret-santa" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-red-800 hover:bg-red-50">Gestionar celebraciones <ArrowRight size={17}/></Link>
+              <p className="mt-4 text-sm leading-7 text-red-100">Gestiona usuarios, tarjetas, grupos, tiendas y el catálogo público desde un solo lugar.</p>
+              <Link to="/admin/stores" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-red-800 hover:bg-red-50">Crear o revisar tiendas <ArrowRight size={17}/></Link>
             </div>
             <img src="https://images.unsplash.com/photo-1512389142860-9c449e58a543?auto=format&fit=crop&w=900&q=75"
               alt="" loading="lazy" className="absolute inset-y-0 right-0 hidden h-full w-2/5 object-cover opacity-30 lg:block"/>
           </section>
+
           <section>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-xl font-black text-red-950">Resumen del sistema</h2>
@@ -82,7 +119,7 @@ export default function HomeAdmin() {
               </button>
             </div>
             {error && <p role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{error}</p>}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {tiles.map(([label, value, Icon]) => (
                 <div key={label} className="min-w-0 rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
                   <Icon size={24} className="text-red-600"/>
@@ -93,9 +130,10 @@ export default function HomeAdmin() {
             </div>
             <p className="mt-3 text-xs text-slate-500">Datos reales del servidor. El guion indica que la información no está disponible.</p>
           </section>
+
           <section>
             <h2 className="mb-4 text-xl font-black text-red-950">Accesos rápidos</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {links.map(({ to, label, detail, icon: Icon }) => (
                 <Link to={to} key={to} className="group flex min-w-0 items-center gap-4 rounded-2xl border border-red-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-300 hover:shadow-md">
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-red-50 text-red-700"><Icon size={23}/></div>
@@ -105,9 +143,10 @@ export default function HomeAdmin() {
               ))}
             </div>
           </section>
+
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-red-100 bg-white p-5 text-sm text-slate-600">
             <ShieldCheck size={21} className="text-red-600"/>
-            Solo administradores pueden editar los eventos globales. Los organizadores eligen un evento para sus propios grupos.
+            Las tiendas gestionan sus propios productos y categorías desde su cuenta. El administrador puede crear cuentas, consultar escaparates y revisar el catálogo publicado.
           </div>
         </div>
       </main>

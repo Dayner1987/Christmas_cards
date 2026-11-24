@@ -1,6 +1,7 @@
 export type UserRole =
   | 'admin'
-  | 'client';
+  | 'client'
+  | 'store';
 
 export interface AuthUser {
   id: string;

@@ -44,12 +44,13 @@ export default function LoginPage() {
 
       await Swal.fire({
         icon: 'success',
+        iconColor: '#dc143c',
         title: '¡Bienvenido!',
         timer: 1100,
         showConfirmButton: false,
       });
 
-      navigate(result.user.role === 'admin' ? '/admin' : '/home', {
+      navigate(result.user.role === 'admin' ? '/admin' : result.user.role === 'store' ? '/tienda/dashboard' : '/home', {
         replace: true,
       });
     } catch (cause) {
@@ -227,6 +228,7 @@ export default function LoginPage() {
                   <ArrowRight size={18} />
                 </button>
               </form>
+              <Link to="/forgot-password" className="mt-4 block text-sm font-bold text-red-700 underline">¿Olvidaste tu contraseña?</Link>
 
               <p className="mt-8 border-t border-slate-100 pt-7 text-center text-sm text-slate-500">
                 ¿Todavía no tienes una cuenta?{' '}

@@ -21,8 +21,11 @@ async function bootstrap() {
     }),
   );
 
+  const prefix = configService.get<string>('API_PREFIX')?.replace(/^\/+|\/+$/g, '');
+  if (prefix) app.setGlobalPrefix(prefix);
+
   app.enableCors({
-    origin: [frontendUrl],
+    origin: (configService.get<string>('CORS_ORIGINS') || frontendUrl).split(',').map(v => v.trim()),
     methods: [
       'GET',
       'POST',
@@ -40,7 +43,7 @@ async function bootstrap() {
   });
 
   const port =
-    Number(configService.get<string>('APP_PORT')) || 3000;
+    Number(configService.get<string>('PORT') || configService.get<string>('APP_PORT')) || 3000;
 
   await app.listen(port);
 

@@ -165,6 +165,7 @@ export class UsersService {
     return this.usersRepository
       .createQueryBuilder('user')
       .addSelect('user.passwordHash')
+      .addSelect('user.passwordChangedAt')
       .where(
         'LOWER(user.email) = LOWER(:value)',
         { value },
